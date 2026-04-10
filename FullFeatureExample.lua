@@ -67,6 +67,16 @@ local Window = Fluent:CreateWindow({
     Acrylic     = true,
     Theme       = "Spectre",
     MinimizeKey = Enum.KeyCode.LeftControl,
+
+    -- Mobile Toggle Button (auto-shows on mobile, set Enabled=true to force on PC)
+    ToggleButton = {
+        -- Enabled = true,                        -- force show on all platforms
+        Image = "rbxassetid://10734896206",       -- custom icon (lucide minus/menu)
+        Shape = "Circle",                         -- "Circle" | "Square" | "Logo"
+        Size  = 50,                               -- pixel size
+        -- Color = Color3.fromRGB(139, 92, 246),  -- custom color (nil = follow theme Accent)
+        -- Position = UDim2.new(0, 15, 0.5, -25), -- custom position
+    },
 })
 
 -- ============================================

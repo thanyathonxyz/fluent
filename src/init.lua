@@ -175,6 +175,7 @@ function Library:CreateWindow(Config)
 		TabWidth = Config.TabWidth or 160,
 		Size = Config.Size or UDim2.fromOffset(580, 460),
 		Parent = GUI,
+		ToggleButton = Config.ToggleButton,
 	})
     
     -- Link Library and Elements to Window

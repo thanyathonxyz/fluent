@@ -413,12 +413,164 @@ return function(Config)
 		end
 		if not MinimizeNotif then
 			MinimizeNotif = true
-			local Key = Library.MinimizeKeybind and Library.MinimizeKeybind.Value or Library.MinimizeKey.Name
-			Library:Notify({
-				Title = "Interface",
-				Content = "Press " .. Key .. " to toggle the interface.",
-				Duration = 6
+			if Window.ToggleButton then
+				Library:Notify({
+					Title = "Interface",
+					Content = "Drag the toggle button to move it. Tap to show/hide.",
+					Duration = 6
+				})
+			else
+				local Key = Library.MinimizeKeybind and Library.MinimizeKeybind.Value or Library.MinimizeKey.Name
+				Library:Notify({
+					Title = "Interface",
+					Content = "Press " .. Key .. " to toggle the interface.",
+					Duration = 6
+				})
+			end
+		end
+	end
+
+	-- ========== Mobile Toggle Button ==========
+	do
+		local TBRaw = Config.ToggleButton
+		local TBConfig = {}
+		local ShowToggle
+
+		if TBRaw == false then
+			ShowToggle = false
+		elseif TBRaw == true then
+			TBConfig = { Enabled = true }
+			ShowToggle = true
+		elseif type(TBRaw) == "table" then
+			TBConfig = TBRaw
+			if TBConfig.Enabled ~= nil then
+				ShowToggle = TBConfig.Enabled
+			else
+				ShowToggle = UserInputService.TouchEnabled and not UserInputService.KeyboardEnabled
+			end
+		else
+			-- nil/unset: auto-detect mobile
+			ShowToggle = UserInputService.TouchEnabled and not UserInputService.KeyboardEnabled
+		end
+
+		if ShowToggle then
+			local TBShape = TBConfig.Shape or "Circle"
+			local TBSize = TBConfig.Size or 50
+			local TBImage = TBConfig.Image or Config.Icon or nil
+			local UseCustomColor = TBConfig.Color ~= nil
+			local TBColor = TBConfig.Color or Color3.fromRGB(76, 115, 255)
+			local TBPosition = TBConfig.Position or UDim2.new(0, 15, 0.5, -TBSize / 2)
+			local IsLogoOnly = (TBShape == "Logo")
+
+			local CornerRadius
+			if TBShape == "Circle" then
+				CornerRadius = UDim.new(1, 0)
+			elseif TBShape == "Square" then
+				CornerRadius = UDim.new(0, 10)
+			else
+				CornerRadius = UDim.new(0, 0)
+			end
+
+			local IconSize = IsLogoOnly and TBSize or math.floor(TBSize * 0.55)
+
+			local ToggleIcon = TBImage and New("ImageLabel", {
+				Name = "Icon",
+				Size = UDim2.fromOffset(IconSize, IconSize),
+				Position = UDim2.fromScale(0.5, 0.5),
+				AnchorPoint = Vector2.new(0.5, 0.5),
+				BackgroundTransparency = 1,
+				Image = TBImage,
+				ScaleType = Enum.ScaleType.Fit,
+			}) or nil
+
+			Window.ToggleButton = New("TextButton", {
+				Name = "ToggleButton",
+				Size = UDim2.fromOffset(TBSize, TBSize),
+				Position = TBPosition,
+				BackgroundColor3 = IsLogoOnly and Color3.new(0, 0, 0) or TBColor,
+				BackgroundTransparency = IsLogoOnly and 1 or 0.15,
+				Text = "",
+				AutoButtonColor = false,
+				Parent = Config.Parent,
+				ZIndex = 999,
+				ThemeTag = (not IsLogoOnly and not UseCustomColor) and { BackgroundColor3 = "Accent" } or nil,
+			}, {
+				New("UICorner", { CornerRadius = CornerRadius }),
+				(not IsLogoOnly) and New("UIStroke", {
+					Thickness = 1.5,
+					Transparency = 0.4,
+					Color = TBColor,
+					ThemeTag = (not UseCustomColor) and { Color = "Accent" } or nil,
+				}) or nil,
+				ToggleIcon,
+				(not IsLogoOnly) and New("ImageLabel", {
+					Name = "Shadow",
+					BackgroundTransparency = 1,
+					Image = "rbxassetid://5554236805",
+					ScaleType = Enum.ScaleType.Slice,
+					SliceCenter = Rect.new(23, 23, 277, 277),
+					Size = UDim2.fromScale(1, 1) + UDim2.fromOffset(30, 30),
+					Position = UDim2.fromOffset(-15, -12),
+					ImageColor3 = Color3.fromRGB(0, 0, 0),
+					ImageTransparency = 0.6,
+					ZIndex = -1,
+				}) or nil,
 			})
+
+			-- Draggable toggle button
+			local TBDragging = false
+			local TBDragInput
+			local TBDragStart
+			local TBStartPos
+			local DidDrag = false
+
+			Creator.AddSignal(Window.ToggleButton.InputBegan, function(Input)
+				if Input.UserInputType == Enum.UserInputType.MouseButton1 or Input.UserInputType == Enum.UserInputType.Touch then
+					TBDragging = true
+					DidDrag = false
+					TBDragStart = Input.Position
+					TBStartPos = Vector2.new(
+						Window.ToggleButton.AbsolutePosition.X,
+						Window.ToggleButton.AbsolutePosition.Y
+					)
+
+					if not IsLogoOnly then
+						Window.ToggleButton.BackgroundTransparency = 0.35
+					end
+
+					Input.Changed:Connect(function()
+						if Input.UserInputState == Enum.UserInputState.End then
+							TBDragging = false
+							if not IsLogoOnly then
+								Window.ToggleButton.BackgroundTransparency = 0.15
+							end
+							if not DidDrag then
+								Window:Minimize()
+							end
+						end
+					end)
+				end
+			end)
+
+			Creator.AddSignal(Window.ToggleButton.InputChanged, function(Input)
+				if Input.UserInputType == Enum.UserInputType.MouseMovement or Input.UserInputType == Enum.UserInputType.Touch then
+					TBDragInput = Input
+				end
+			end)
+
+			Creator.AddSignal(UserInputService.InputChanged, function(Input)
+				if Input == TBDragInput and TBDragging then
+					local Delta = Input.Position - TBDragStart
+					if Delta.Magnitude > 5 then
+						DidDrag = true
+					end
+					local NewPos = UDim2.fromOffset(
+						math.clamp(TBStartPos.X + Delta.X, 0, Camera.ViewportSize.X - TBSize),
+						math.clamp(TBStartPos.Y + Delta.Y, 0, Camera.ViewportSize.Y - TBSize)
+					)
+					Window.ToggleButton.Position = NewPos
+				end
+			end)
 		end
 	end
 
@@ -444,6 +596,11 @@ return function(Config)
 		end)
 		pcall(function()
 			Window.Root:Destroy()
+		end)
+		pcall(function()
+			if Window.ToggleButton then
+				Window.ToggleButton:Destroy()
+			end
 		end)
 	end
 
