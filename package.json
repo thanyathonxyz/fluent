@@ -1,0 +1,16 @@
+{
+  "name": "fluentlibrary",
+  "version": "1.0.0",
+  "description": "",
+  "main": "init.lua",
+  "scripts": {
+    "rojo": "mkdirp dist && set \"PATH=%USERPROFILE%\\.aftman\\bin;%PATH%\" && rojo build -o dist/main.rbxm",
+    "bundle": "set \"PATH=%USERPROFILE%\\.aftman\\bin;%PATH%\" && npm run rojo && lune build"
+  },
+  "keywords": [],
+  "author": "dawid",
+  "license": "MIT",
+  "devDependencies": {
+    "mkdirp": "^3.0.1"
+  }
+}
