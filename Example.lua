@@ -1,4 +1,4 @@
-local Fluent = loadstring(game:HttpGet("https://raw.githubusercontent.com/thanyathonxyz/fluent/refs/heads/main/main.lua"))()
+local Fluent = loadstring(game:HttpGet("https://raw.githubusercontent.com/thanyathonxyz/fluent/refs/heads/main/dist/main.lua"))()
 local SaveManager = loadstring(game:HttpGet("https://raw.githubusercontent.com/thanyathonxyz/fluent/refs/heads/main/Addons/SaveManager.lua"))()
 local InterfaceManager = loadstring(game:HttpGet("https://raw.githubusercontent.com/thanyathonxyz/fluent/refs/heads/main/Addons/InterfaceManager.lua"))()
 
