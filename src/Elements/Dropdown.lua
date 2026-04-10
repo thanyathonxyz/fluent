@@ -177,48 +177,87 @@ function Element:New(Idx, Config)
 	})
 	table.insert(Library.OpenFrames, DropdownHolderCanvas)
 
+	-- Mobile overlay dimmer (closes dropdown on tap outside)
+	local DropdownDimmer = New("TextButton", {
+		Size = UDim2.fromScale(1, 1),
+		BackgroundColor3 = Color3.fromRGB(0, 0, 0),
+		BackgroundTransparency = 0.5,
+		Text = "",
+		ZIndex = DropdownHolderCanvas.ZIndex - 1,
+		Parent = self.Library.GUI,
+		Visible = false,
+	})
+
+	Creator.AddSignal(DropdownDimmer.MouseButton1Click, function()
+		Dropdown:Close()
+	end)
+
+	local function IsMobile()
+		local viewport = Camera.ViewportSize
+		return UserInputService.TouchEnabled and (viewport.X < 800 or viewport.Y < 500)
+	end
+
 	local function RecalculateListPosition()
-		-- Position dropdown OUTSIDE the main window, on the RIGHT side
-		local windowFrame = Library.Window and Library.Window.Root
-		local buttonY = DropdownInner.AbsolutePosition.Y
-		local dropdownHeight = DropdownHolderCanvas.AbsoluteSize.Y
-		
-		-- Get the right edge of the main window
-		local windowRightX
-		if windowFrame then
-			windowRightX = windowFrame.AbsolutePosition.X + windowFrame.AbsoluteSize.X
+		local viewport = Camera.ViewportSize
+
+		if IsMobile() then
+			-- Mobile: center dropdown as overlay on screen
+			local canvasW = math.min(math.floor(viewport.X * 0.75), 400)
+			local canvasH = DropdownHolderCanvas.AbsoluteSize.Y
+			canvasH = math.min(canvasH, math.floor(viewport.Y * 0.55))
+
+			DropdownHolderCanvas.Size = UDim2.fromOffset(canvasW, canvasH)
+
+			local xPos = math.floor((viewport.X - canvasW) / 2)
+			local yPos = math.floor((viewport.Y - canvasH) / 2)
+			DropdownHolderCanvas.Position = UDim2.fromOffset(math.max(10, xPos), math.max(10, yPos))
 		else
-			-- Fallback to button position
-			windowRightX = DropdownInner.AbsolutePosition.X + DropdownInner.AbsoluteSize.X
-		end
-		
-		-- Check if dropdown would go off bottom of screen
-		local yOffset = 0
-		if buttonY + dropdownHeight > Camera.ViewportSize.Y - 10 then
-			yOffset = (buttonY + dropdownHeight) - (Camera.ViewportSize.Y - 10)
-		end
-		
-		-- Position to the right of the window with small gap
-		local xPos = windowRightX + 8
-		
-		-- If it would go off screen, position to the left of the window instead
-		if xPos + DropdownHolderCanvas.AbsoluteSize.X > Camera.ViewportSize.X - 10 then
+			-- Desktop: position dropdown outside the main window
+			local windowFrame = Library.Window and Library.Window.Root
+			local buttonY = DropdownInner.AbsolutePosition.Y
+			local dropdownHeight = DropdownHolderCanvas.AbsoluteSize.Y
+
+			local windowRightX
 			if windowFrame then
-				xPos = windowFrame.AbsolutePosition.X - DropdownHolderCanvas.AbsoluteSize.X - 8
+				windowRightX = windowFrame.AbsolutePosition.X + windowFrame.AbsoluteSize.X
 			else
-				xPos = DropdownInner.AbsolutePosition.X - DropdownHolderCanvas.AbsoluteSize.X - 8
+				windowRightX = DropdownInner.AbsolutePosition.X + DropdownInner.AbsoluteSize.X
 			end
+
+			local yOffset = 0
+			if buttonY + dropdownHeight > viewport.Y - 10 then
+				yOffset = (buttonY + dropdownHeight) - (viewport.Y - 10)
+			end
+
+			local xPos = windowRightX + 8
+
+			if xPos + DropdownHolderCanvas.AbsoluteSize.X > viewport.X - 10 then
+				if windowFrame then
+					xPos = windowFrame.AbsolutePosition.X - DropdownHolderCanvas.AbsoluteSize.X - 8
+				else
+					xPos = DropdownInner.AbsolutePosition.X - DropdownHolderCanvas.AbsoluteSize.X - 8
+				end
+			end
+
+			DropdownHolderCanvas.Position = UDim2.fromOffset(xPos, buttonY - yOffset)
 		end
-		
-		DropdownHolderCanvas.Position = UDim2.fromOffset(xPos, buttonY - yOffset)
 	end
 
 	local ListSizeX = 0
 	local function RecalculateListSize()
-		if #Dropdown.Values > 10 then
-			DropdownHolderCanvas.Size = UDim2.fromOffset(ListSizeX, 448)
+		if IsMobile() then
+			-- Mobile: use screen-relative size, RecalculateListPosition handles width
+			local viewport = Camera.ViewportSize
+			local canvasW = math.min(math.floor(viewport.X * 0.75), 400)
+			local contentH = DropdownListLayout.AbsoluteContentSize.Y + 54 -- +54 for search bar + padding
+			local maxH = math.floor(viewport.Y * 0.55)
+			DropdownHolderCanvas.Size = UDim2.fromOffset(canvasW, math.min(contentH, maxH))
 		else
-			DropdownHolderCanvas.Size = UDim2.fromOffset(ListSizeX, DropdownListLayout.AbsoluteContentSize.Y + 10)
+			if #Dropdown.Values > 10 then
+				DropdownHolderCanvas.Size = UDim2.fromOffset(ListSizeX, 448)
+			else
+				DropdownHolderCanvas.Size = UDim2.fromOffset(ListSizeX, DropdownListLayout.AbsoluteContentSize.Y + 54)
+			end
 		end
 	end
 
@@ -273,6 +312,11 @@ function Element:New(Idx, Config)
 		end
 		DropdownSearchInput.Text = ""
 		DropdownHolderCanvas.Visible = true
+		if IsMobile() then
+			DropdownDimmer.Visible = true
+			RecalculateListSize()
+		end
+		RecalculateListPosition()
 		TweenService:Create(
 			DropdownHolderFrame,
 			TweenInfo.new(0.2, Enum.EasingStyle.Quart, Enum.EasingDirection.Out),
@@ -287,6 +331,7 @@ function Element:New(Idx, Config)
 		end
 		DropdownHolderFrame.Size = UDim2.fromScale(1, 0.6)
 		DropdownHolderCanvas.Visible = false
+		DropdownDimmer.Visible = false
 		-- Clear search when closing
 		DropdownSearchInput.Text = ""
 	end
@@ -342,6 +387,9 @@ function Element:New(Idx, Config)
 	function Dropdown:BuildDropdownList()
 		local Values = Dropdown.Values
 		Dropdown.Buttons = {} -- Use Dropdown.Buttons instead of local
+		local mobile = IsMobile()
+		local optionHeight = mobile and 46 or 38
+		local optionTextSize = mobile and 16 or 14
 
 		for _, Element in next, DropdownScrollFrame:GetChildren() do
 			if not Element:IsA("UIListLayout") then
@@ -374,7 +422,7 @@ function Element:New(Idx, Config)
 				FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json"),
 				Text = Value,
 				TextColor3 = Color3.fromRGB(200, 200, 200),
-				TextSize = 14,
+				TextSize = optionTextSize,
 				TextXAlignment = Enum.TextXAlignment.Left,
 				BackgroundColor3 = Color3.fromRGB(255, 255, 255),
 				AutomaticSize = Enum.AutomaticSize.Y,
@@ -388,7 +436,7 @@ function Element:New(Idx, Config)
 			})
 
 			local Button = New("TextButton", {
-				Size = UDim2.new(1, -5, 0, 38),
+				Size = UDim2.new(1, -5, 0, optionHeight),
 				BackgroundTransparency = 1,
 				ZIndex = 23,
 				Text = "",
@@ -541,6 +589,7 @@ function Element:New(Idx, Config)
 
 	function Dropdown:Destroy()
 		DropdownFrame:Destroy()
+		DropdownDimmer:Destroy()
 		Library.Options[Idx] = nil
 	end
 
