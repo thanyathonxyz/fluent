@@ -193,8 +193,7 @@ function Element:New(Idx, Config)
 	end)
 
 	local function IsMobile()
-		local viewport = Camera.ViewportSize
-		return UserInputService.TouchEnabled and (viewport.X < 800 or viewport.Y < 500)
+		return UserInputService.TouchEnabled
 	end
 
 	local function RecalculateListPosition()
@@ -202,9 +201,14 @@ function Element:New(Idx, Config)
 
 		if IsMobile() then
 			-- Mobile: center dropdown as overlay on screen
-			local canvasW = math.min(math.floor(viewport.X * 0.75), 400)
-			local canvasH = DropdownHolderCanvas.AbsoluteSize.Y
-			canvasH = math.min(canvasH, math.floor(viewport.Y * 0.55))
+			local isLandscape = viewport.X > viewport.Y
+			local canvasW = isLandscape
+				and math.min(math.floor(viewport.X * 0.4), 420)
+				or math.min(math.floor(viewport.X * 0.75), 400)
+			local maxH = isLandscape
+				and math.floor(viewport.Y * 0.7)
+				or math.floor(viewport.Y * 0.55)
+			local canvasH = math.min(DropdownHolderCanvas.AbsoluteSize.Y, maxH)
 
 			DropdownHolderCanvas.Size = UDim2.fromOffset(canvasW, canvasH)
 
@@ -246,11 +250,15 @@ function Element:New(Idx, Config)
 	local ListSizeX = 0
 	local function RecalculateListSize()
 		if IsMobile() then
-			-- Mobile: use screen-relative size, RecalculateListPosition handles width
 			local viewport = Camera.ViewportSize
-			local canvasW = math.min(math.floor(viewport.X * 0.75), 400)
-			local contentH = DropdownListLayout.AbsoluteContentSize.Y + 54 -- +54 for search bar + padding
-			local maxH = math.floor(viewport.Y * 0.55)
+			local isLandscape = viewport.X > viewport.Y
+			local canvasW = isLandscape
+				and math.min(math.floor(viewport.X * 0.4), 420)
+				or math.min(math.floor(viewport.X * 0.75), 400)
+			local contentH = DropdownListLayout.AbsoluteContentSize.Y + 54
+			local maxH = isLandscape
+				and math.floor(viewport.Y * 0.7)
+				or math.floor(viewport.Y * 0.55)
 			DropdownHolderCanvas.Size = UDim2.fromOffset(canvasW, math.min(contentH, maxH))
 		else
 			if #Dropdown.Values > 10 then
