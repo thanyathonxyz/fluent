@@ -27,6 +27,7 @@ function Element:New(Idx, Config)
 	local Picking = false
 
 	local KeybindFrame = require(Components.Element)(Config.Title, Config.Description, self.Container, true)
+	KeybindFrame.DescLabel.Size = UDim2.new(1, -120, 0, 14)
 
 	Keybind.SetTitle = KeybindFrame.SetTitle
 	Keybind.SetDesc = KeybindFrame.SetDesc

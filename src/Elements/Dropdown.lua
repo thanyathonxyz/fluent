@@ -28,7 +28,7 @@ function Element:New(Idx, Config)
 	}
 
 	local DropdownFrame = require(Components.Element)(Config.Title, Config.Description, self.Container, false)
-	DropdownFrame.DescLabel.Size = UDim2.new(1, -170, 0, 14)
+	DropdownFrame.DescLabel.Size = UDim2.new(1, -210, 0, 14)
 
 	Dropdown.SetTitle = DropdownFrame.SetTitle
 	Dropdown.SetDesc = DropdownFrame.SetDesc
@@ -37,7 +37,7 @@ function Element:New(Idx, Config)
 		FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.Regular, Enum.FontStyle.Normal),
 		Text = "Value",
 		TextColor3 = Color3.fromRGB(240, 240, 240),
-		TextSize = 13,
+		TextSize = 14,
 		TextXAlignment = Enum.TextXAlignment.Left,
 		Size = UDim2.new(1, -30, 0, 14),
 		Position = UDim2.new(0, 8, 0.5, 0),
@@ -62,7 +62,7 @@ function Element:New(Idx, Config)
 	})
 
 	local DropdownInner = New("TextButton", {
-		Size = UDim2.fromOffset(160, 30),
+		Size = UDim2.fromOffset(200, 36),
 		Position = UDim2.new(1, -10, 0.5, 0),
 		AnchorPoint = Vector2.new(1, 0.5),
 		BackgroundTransparency = 0.9,
@@ -107,12 +107,12 @@ function Element:New(Idx, Config)
 
 	-- Search input for dropdown
 	local DropdownSearchInput = New("TextBox", {
-		Size = UDim2.new(1, -10, 0, 28),
+		Size = UDim2.new(1, -10, 0, 34),
 		Position = UDim2.fromOffset(5, 5),
 		BackgroundTransparency = 0.9,
 		PlaceholderText = "Search...",
 		Text = "",
-		TextSize = 12,
+		TextSize = 14,
 		TextXAlignment = Enum.TextXAlignment.Left,
 		FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json"),
 		ClipsDescendants = true,
@@ -132,8 +132,8 @@ function Element:New(Idx, Config)
 	})
 
 	-- Adjust scroll frame position to account for search bar
-	DropdownScrollFrame.Size = UDim2.new(1, -5, 1, -40)
-	DropdownScrollFrame.Position = UDim2.fromOffset(5, 38)
+	DropdownScrollFrame.Size = UDim2.new(1, -5, 1, -46)
+	DropdownScrollFrame.Position = UDim2.fromOffset(5, 44)
 
 	local DropdownHolderFrame = New("Frame", {
 		Size = UDim2.fromScale(1, 0.6),
@@ -166,13 +166,13 @@ function Element:New(Idx, Config)
 
 	local DropdownHolderCanvas = New("Frame", {
 		BackgroundTransparency = 1,
-		Size = UDim2.fromOffset(170, 300),
+		Size = UDim2.fromOffset(220, 300),
 		Parent = self.Library.GUI,
 		Visible = false,
 	}, {
 		DropdownHolderFrame,
 		New("UISizeConstraint", {
-			MinSize = Vector2.new(170, 0),
+			MinSize = Vector2.new(220, 0),
 		}),
 	})
 	table.insert(Library.OpenFrames, DropdownHolderCanvas)
@@ -216,7 +216,7 @@ function Element:New(Idx, Config)
 	local ListSizeX = 0
 	local function RecalculateListSize()
 		if #Dropdown.Values > 10 then
-			DropdownHolderCanvas.Size = UDim2.fromOffset(ListSizeX, 392)
+			DropdownHolderCanvas.Size = UDim2.fromOffset(ListSizeX, 448)
 		else
 			DropdownHolderCanvas.Size = UDim2.fromOffset(ListSizeX, DropdownListLayout.AbsoluteContentSize.Y + 10)
 		end
@@ -374,7 +374,7 @@ function Element:New(Idx, Config)
 				FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json"),
 				Text = Value,
 				TextColor3 = Color3.fromRGB(200, 200, 200),
-				TextSize = 13,
+				TextSize = 14,
 				TextXAlignment = Enum.TextXAlignment.Left,
 				BackgroundColor3 = Color3.fromRGB(255, 255, 255),
 				AutomaticSize = Enum.AutomaticSize.Y,
@@ -388,7 +388,7 @@ function Element:New(Idx, Config)
 			})
 
 			local Button = New("TextButton", {
-				Size = UDim2.new(1, -5, 0, 32),
+				Size = UDim2.new(1, -5, 0, 38),
 				BackgroundTransparency = 1,
 				ZIndex = 23,
 				Text = "",

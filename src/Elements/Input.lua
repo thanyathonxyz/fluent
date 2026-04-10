@@ -23,6 +23,7 @@ function Element:New(Idx, Config)
 	}
 
 	local InputFrame = require(Components.Element)(Config.Title, Config.Description, self.Container, false)
+	InputFrame.DescLabel.Size = UDim2.new(1, -180, 0, 14)
 
 	Input.SetTitle = InputFrame.SetTitle
 	Input.SetDesc = InputFrame.SetDesc
