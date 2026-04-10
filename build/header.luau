@@ -3,7 +3,7 @@
     This script is not intended to be modified.
     To view the source code, see the 'src' folder on GitHub!
 
-    Author: dawid
+    Author: dawid (modified by thanyathonxyz)
     License: MIT
-    GitHub: https://github.com/dawid-scripts/Fluent
+    GitHub: https://github.com/thanyathonxyz/fluent
 --]]

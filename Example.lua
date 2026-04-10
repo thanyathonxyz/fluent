@@ -7,9 +7,13 @@ local Window = Fluent:CreateWindow({
     SubTitle = "Premium Overhaul",
     TabWidth = 160,
     Size = UDim2.fromOffset(580, 460),
-    Acrylic = true, -- The search bar is now in the sidebar automatically
+    Acrylic = true,
     Theme = "Night",
-    MinimizeKey = Enum.KeyCode.LeftControl
+    MinimizeKey = Enum.KeyCode.LeftControl,
+    ToggleButton = {
+        Shape = "Circle",
+        Size  = 50,
+    },
 })
 
 -- Fluent now uses a single Search Bar in the Sidebar by default.

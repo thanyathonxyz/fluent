@@ -125,6 +125,6 @@ local Config = {
 
 ## 🌐 URLs
 
-- **Enhanced Fluent UI**: `https://raw.githubusercontent.com/tigerprettyboi/enchanted-gui/main/main.lua`
-- **SaveManager**: `https://raw.githubusercontent.com/dawid-scripts/Fluent/master/Addons/SaveManager.lua`
-- **InterfaceManager**: `https://raw.githubusercontent.com/dawid-scripts/Fluent/master/Addons/InterfaceManager.lua`
+- **SpectreUI / Fluent**: `https://raw.githubusercontent.com/thanyathonxyz/fluent/refs/heads/main/dist/main.lua`
+- **SaveManager**: `https://raw.githubusercontent.com/thanyathonxyz/fluent/refs/heads/main/Addons/SaveManager.lua`
+- **InterfaceManager**: `https://raw.githubusercontent.com/thanyathonxyz/fluent/refs/heads/main/Addons/InterfaceManager.lua`

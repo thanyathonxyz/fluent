@@ -10,16 +10,16 @@
 
 ## 🔌 Installation
 
-You can load Fluent through a GitHub Release:
+You can load Fluent through GitHub:
 
 ```lua
-local Fluent = loadstring(game:HttpGet("https://github.com/dawid-scripts/Fluent/releases/latest/download/main.lua"))()
+local Fluent = loadstring(game:HttpGet("https://raw.githubusercontent.com/thanyathonxyz/fluent/refs/heads/main/dist/main.lua"))()
 ```
 <br/>
 
 ## 📜 Usage
 
-[Example Script](https://github.com/dawid-scripts/Fluent/blob/master/Example.lua)
+[Example Script](https://github.com/thanyathonxyz/fluent/blob/main/Example.lua)
 <br/>
 
 ## Credits
