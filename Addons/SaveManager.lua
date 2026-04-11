@@ -327,6 +327,173 @@ local SaveManager = {} do
 		SaveManager:SetIgnoreIndexes({ "SaveManager_ConfigList", "SaveManager_ConfigName" })
 	end
 
+	function SaveManager:BuildProfileSection(tab)
+		assert(self.Library, "Must set SaveManager.Library")
+
+		local section = tab:AddSection("Profiles")
+		self.ActiveProfile = self.ActiveProfile or nil
+
+		section:AddDropdown("SaveManager_ProfileSwitch", {
+			Title = "Active Profile",
+			Description = "Select a profile to switch instantly",
+			Values = self:RefreshConfigList(),
+			AllowNull = true,
+			Callback = function(Value)
+				if Value and Value ~= "" then
+					local success, err = self:Load(Value)
+					if success then
+						self.ActiveProfile = Value
+						self.Library:Notify({
+							Title = "Profiles",
+							Content = string.format("Switched to profile %q", Value),
+							Duration = 3
+						})
+					else
+						self.Library:Notify({
+							Title = "Profiles",
+							Content = "Failed to load profile",
+							SubContent = err or "Unknown error",
+							Duration = 5
+						})
+					end
+				end
+			end
+		})
+
+		section:AddInput("SaveManager_NewProfileName", { Title = "New profile name" })
+
+		section:AddButton({
+			Title = "Create Profile",
+			Description = "Save current settings as a new profile",
+			Callback = function()
+				local name = SaveManager.Options.SaveManager_NewProfileName.Value
+				if name:gsub(" ", "") == "" then
+					return self.Library:Notify({
+						Title = "Profiles",
+						Content = "Profile name cannot be empty",
+						Duration = 3
+					})
+				end
+
+				local success, err = self:Save(name)
+				if success then
+					self.ActiveProfile = name
+					self.Library:Notify({
+						Title = "Profiles",
+						Content = string.format("Created profile %q", name),
+						Duration = 3
+					})
+					SaveManager.Options.SaveManager_ProfileSwitch:SetValues(self:RefreshConfigList())
+					SaveManager.Options.SaveManager_ProfileSwitch:SetValue(name)
+				else
+					self.Library:Notify({
+						Title = "Profiles",
+						Content = "Failed to create profile",
+						SubContent = err or "Unknown error",
+						Duration = 5
+					})
+				end
+			end
+		})
+
+		section:AddButton({
+			Title = "Save Current",
+			Description = "Overwrite active profile with current settings",
+			Callback = function()
+				if not self.ActiveProfile then
+					return self.Library:Notify({
+						Title = "Profiles",
+						Content = "No active profile selected",
+						Duration = 3
+					})
+				end
+
+				local success, err = self:Save(self.ActiveProfile)
+				if success then
+					self.Library:Notify({
+						Title = "Profiles",
+						Content = string.format("Saved to %q", self.ActiveProfile),
+						Duration = 3
+					})
+				else
+					self.Library:Notify({
+						Title = "Profiles",
+						Content = "Failed to save",
+						SubContent = err or "Unknown error",
+						Duration = 5
+					})
+				end
+			end
+		})
+
+		section:AddButton({
+			Title = "Delete Profile",
+			Description = "Delete the selected profile permanently",
+			Callback = function()
+				local name = SaveManager.Options.SaveManager_ProfileSwitch.Value
+				if not name or name == "" then
+					return self.Library:Notify({
+						Title = "Profiles",
+						Content = "No profile selected",
+						Duration = 3
+					})
+				end
+
+				pcall(delfile, self.Folder .. "/settings/" .. name .. ".json")
+
+				if self.ActiveProfile == name then
+					self.ActiveProfile = nil
+				end
+
+				SaveManager.Options.SaveManager_ProfileSwitch:SetValues(self:RefreshConfigList())
+				SaveManager.Options.SaveManager_ProfileSwitch:SetValue(nil)
+
+				self.Library:Notify({
+					Title = "Profiles",
+					Content = string.format("Deleted profile %q", name),
+					Duration = 3
+				})
+			end
+		})
+
+		local AutoloadBtn
+		AutoloadBtn = section:AddButton({
+			Title = "Set as Autoload",
+			Description = "Current autoload: none",
+			Callback = function()
+				local name = SaveManager.Options.SaveManager_ProfileSwitch.Value
+				if not name or name == "" then return end
+				pcall(writefile, self.Folder .. "/settings/autoload.txt", name)
+				AutoloadBtn:SetDesc("Current autoload: " .. name)
+				self.Library:Notify({
+					Title = "Profiles",
+					Content = string.format("Set %q as autoload", name),
+					Duration = 3
+				})
+			end
+		})
+
+		local checkOk, checkExists = pcall(isfile, self.Folder .. "/settings/autoload.txt")
+		if checkOk and checkExists then
+			local readOk, name = pcall(readfile, self.Folder .. "/settings/autoload.txt")
+			if readOk then
+				AutoloadBtn:SetDesc("Current autoload: " .. name)
+			end
+		end
+
+		section:AddButton({
+			Title = "Refresh",
+			Callback = function()
+				SaveManager.Options.SaveManager_ProfileSwitch:SetValues(self:RefreshConfigList())
+				SaveManager.Options.SaveManager_ProfileSwitch:SetValue(nil)
+			end
+		})
+
+		SaveManager:SetIgnoreIndexes({
+			"SaveManager_ProfileSwitch", "SaveManager_NewProfileName"
+		})
+	end
+
 	SaveManager:BuildFolderTree()
 end
 

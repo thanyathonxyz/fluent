@@ -228,6 +228,7 @@ function TabModule:SelectTab(Tab)
 	
 	local Window = TabModule.Window
 	local TweenService = game:GetService("TweenService")
+	local Library = Window.Library
 
 	TabModule.SelectedTab = Tab
 	TabModule._switching = true
@@ -239,41 +240,84 @@ function TabModule:SelectTab(Tab)
 	Window.TabDisplay.Text = TabModule.Tabs[Tab].Name
 	Window.SelectorPosMotor:setGoal(Spring(TabModule:GetCurrentTabPos(), { frequency = 6 }))
 
+	local style = Library and Library.TransitionStyle or "slide"
+
 	task.spawn(function()
 		Window.ContainerHolder.Parent = Window.ContainerAnim
-		
-		-- Slide out + fade
-		Window.ContainerPosMotor:setGoal(Spring(15, { frequency = 8 }))
-		Window.ContainerBackMotor:setGoal(Spring(1, { frequency = 8 }))
-		
-		local SlideOut = TweenService:Create(
-			Window.ContainerHolder,
-			TweenInfo.new(0.15, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
-			{ Position = UDim2.new(0, -20, 0, 0) }
-		)
-		SlideOut:Play()
-		
-		task.wait(0.12)
-		
-		for _, Container in next, TabModule.Containers do
-			Container.Visible = false
+
+		if style == "fade" then
+			-- Pure crossfade
+			Window.ContainerBackMotor:setGoal(Spring(1, { frequency = 10 }))
+			task.wait(0.12)
+
+			for _, Container in next, TabModule.Containers do
+				Container.Visible = false
+			end
+			TabModule.Containers[Tab].Visible = true
+
+			Window.ContainerBackMotor:setGoal(Spring(0, { frequency = 6 }))
+			task.wait(0.18)
+
+		elseif style == "scale" then
+			-- Scale down + fade out, then scale up + fade in
+			Window.ContainerBackMotor:setGoal(Spring(1, { frequency = 10 }))
+			local ScaleOut = TweenService:Create(
+				Window.ContainerHolder,
+				TweenInfo.new(0.12, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
+				{ Size = UDim2.new(0.96, 0, 0.96, 0), Position = UDim2.fromScale(0.02, 0.02) }
+			)
+			ScaleOut:Play()
+			task.wait(0.1)
+
+			for _, Container in next, TabModule.Containers do
+				Container.Visible = false
+			end
+			TabModule.Containers[Tab].Visible = true
+
+			Window.ContainerBackMotor:setGoal(Spring(0, { frequency = 6 }))
+			local ScaleIn = TweenService:Create(
+				Window.ContainerHolder,
+				TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
+				{ Size = UDim2.fromScale(1, 1), Position = UDim2.fromScale(0, 0) }
+			)
+			ScaleIn:Play()
+			task.wait(0.18)
+
+		else -- "slide" (default)
+			-- Slide out + fade
+			Window.ContainerPosMotor:setGoal(Spring(15, { frequency = 8 }))
+			Window.ContainerBackMotor:setGoal(Spring(1, { frequency = 8 }))
+
+			local SlideOut = TweenService:Create(
+				Window.ContainerHolder,
+				TweenInfo.new(0.15, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
+				{ Position = UDim2.new(0, -20, 0, 0) }
+			)
+			SlideOut:Play()
+
+			task.wait(0.12)
+
+			for _, Container in next, TabModule.Containers do
+				Container.Visible = false
+			end
+			TabModule.Containers[Tab].Visible = true
+
+			-- Reset position, then slide in
+			Window.ContainerHolder.Position = UDim2.new(0, 20, 0, 0)
+
+			Window.ContainerPosMotor:setGoal(Spring(0, { frequency = 6 }))
+			Window.ContainerBackMotor:setGoal(Spring(0, { frequency = 6 }))
+
+			local SlideIn = TweenService:Create(
+				Window.ContainerHolder,
+				TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
+				{ Position = UDim2.new(0, 0, 0, 0) }
+			)
+			SlideIn:Play()
+
+			task.wait(0.15)
 		end
-		TabModule.Containers[Tab].Visible = true
-		
-		-- Reset position, then slide in
-		Window.ContainerHolder.Position = UDim2.new(0, 20, 0, 0)
-		
-		Window.ContainerPosMotor:setGoal(Spring(0, { frequency = 6 }))
-		Window.ContainerBackMotor:setGoal(Spring(0, { frequency = 6 }))
-		
-		local SlideIn = TweenService:Create(
-			Window.ContainerHolder,
-			TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
-			{ Position = UDim2.new(0, 0, 0, 0) }
-		)
-		SlideIn:Play()
-		
-		task.wait(0.15)
+
 		Window.ContainerHolder.Parent = Window.ContainerCanvas
 		TabModule._switching = false -- Release lock
 	end)

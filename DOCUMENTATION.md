@@ -33,7 +33,12 @@
 11. [Mobile Toggle Button](#11-mobile-toggle-button)
 12. [Shorthand API](#12-shorthand-api)
 13. [อ่านค่าจาก Flag](#13-อ่านค่าจาก-flag)
-14. [ตัวอย่างเต็ม](#14-ตัวอย่างเต็ม)
+14. [Changelog Popup](#14-changelog-popup)
+15. [Profile System](#15-profile-system)
+16. [Element Favorites/Pins](#16-element-favoritespins)
+17. [Gradient Accent](#17-gradient-accent)
+18. [Tab Transition Styles](#18-tab-transition-styles)
+19. [ตัวอย่างเต็ม](#19-ตัวอย่างเต็ม)
 
 ---
 
@@ -755,7 +760,170 @@ Fluent.Options.AimbotEnabled:SetValue(true)
 
 ---
 
-## 14. ตัวอย่างเต็ม
+## 14. Changelog Popup
+
+แสดงป๊อปอัพ "What's New" เมื่อผู้ใช้เปิด script — รองรับ `OnlyOnce` แสดงแค่ครั้งเดียวต่อ version
+
+```lua
+Fluent:Changelog({
+    Title   = "SpectreWare Changelog",   -- หัวข้อ
+    Version = "2.1.0",                   -- เวอร์ชัน (แสดงเป็น badge)
+    Key     = "spectre_changelog",       -- ชื่อไฟล์เก็บ version (ไม่บังคับ)
+    OnlyOnce = true,                     -- แสดงแค่ครั้งเดียวต่อ version (default: true)
+    Items = {
+        { Type = "added",    Text = "Profile quick-switch system" },
+        { Type = "added",    Text = "Changelog popup with version tracking" },
+        { Type = "fixed",    Text = "Acrylic blur stays after minimize" },
+        { Type = "improved", Text = "Tab transition animations" },
+        { Type = "changed",  Text = "SaveManager folder structure" },
+        { Type = "removed",  Text = "Legacy config format support" },
+    },
+})
+```
+
+### Item Types
+
+| Type | Badge | สี | ใช้สำหรับ |
+|------|-------|----|----------|
+| `"added"` | **NEW** | เขียว | ฟีเจอร์ใหม่ |
+| `"fixed"` | **FIX** | น้ำเงิน | แก้บัค |
+| `"removed"` | **DEL** | แดง | ลบฟีเจอร์ |
+| `"changed"` | **CHG** | เหลือง | เปลี่ยนแปลง |
+| `"improved"` | **IMP** | ม่วง | ปรับปรุง |
+
+Items ยังใส่เป็น string ตรงๆ ได้ (จะเป็น type "added" อัตโนมัติ):
+
+```lua
+Items = {
+    "New ESP system",
+    "Better aimbot smoothing",
+    { Type = "fixed", Text = "Memory leak in notifications" },
+}
+```
+
+---
+
+## 15. Profile System
+
+ระบบ Profile System สำหรับสลับ config เร็ว — เหมาะกับ script ที่มีหลาย preset (เช่น "Rage", "Legit", "HvH")
+
+```lua
+-- ตั้งค่า SaveManager ปกติ
+SaveManager:SetLibrary(Fluent)
+SaveManager:SetFolder("MyScript")
+
+-- สร้าง Profile UI
+SaveManager:BuildProfileSection(Tabs.Settings)
+```
+
+### ฟีเจอร์ที่ได้
+
+| ฟีเจอร์ | คำอธิบาย |
+|---------|----------|
+| **Quick Switch Dropdown** | เลือก profile จาก dropdown → auto-load ทันที |
+| **Create Profile** | สร้าง profile ใหม่จาก settings ปัจจุบัน |
+| **Save Current** | บันทึกทับ profile ที่เลือกอยู่ |
+| **Delete Profile** | ลบ profile ที่เลือก |
+| **Set as Autoload** | ตั้ง profile ที่เลือกเป็น autoload ตอนเปิด script |
+| **Refresh** | รีเฟรชรายชื่อ profile |
+
+> **หมายเหตุ:** `BuildProfileSection` ใช้แทน `BuildConfigSection` ได้ — หรือจะใช้ทั้ง 2 อันพร้อมกันก็ได้
+
+---
+
+## 16. Element Favorites/Pins
+
+ปักหมุด Element ที่ใช้บ่อย → เข้าถึงเร็วจาก tab พิเศษ
+
+### เปิดใช้งาน
+
+```lua
+-- สร้าง Favorites Section ใน tab ที่ต้องการ
+Fluent:BuildFavoritesSection(Tabs.Settings)
+```
+
+### วิธีใช้
+
+1. **Hover** บน element ใดก็ได้ → จะเห็นไอคอน ★ (ดาว) มุมขวาบน
+2. **คลิกดาว** เพื่อ pin/unpin
+3. Element ที่ pin ไว้จะแสดงใน **Favorites Section** เป็น card
+4. **คลิก card** → กระโดดไป tab + scroll ถึง element นั้น
+
+### API (สำหรับใช้ในโค้ด)
+
+```lua
+-- เช็คว่า element ถูก pin ไหม
+Fluent:IsFavorite("AimbotEnabled")  -- true/false
+
+-- Pin/Unpin ด้วยโค้ด
+Fluent:ToggleFavorite("AimbotEnabled")
+
+-- Save/Load favorites ด้วยตัวเอง
+Fluent:SaveFavorites()
+Fluent:LoadFavorites()
+```
+
+> Favorites จะถูก save ลง `FluentSettings/favorites.json` อัตโนมัติ
+
+---
+
+## 17. Gradient Accent
+
+ใช้สี gradient แทนสี accent เดี่ยว — ให้ UI สวยขึ้น
+
+```lua
+-- ตั้ง gradient สีม่วง → น้ำเงิน (มุม 45°)
+Fluent:SetAccentGradient(
+    ColorSequence.new(
+        Color3.fromRGB(139, 92, 246),   -- สีเริ่มต้น (ม่วง)
+        Color3.fromRGB(59, 130, 246)    -- สีปลาย (น้ำเงิน)
+    ),
+    45  -- มุม rotation (องศา, ค่าเริ่มต้น: 45)
+)
+
+-- Gradient 3 สี
+Fluent:SetAccentGradient(
+    ColorSequence.new({
+        ColorSequenceKeypoint.new(0.0, Color3.fromRGB(239, 68, 68)),   -- แดง
+        ColorSequenceKeypoint.new(0.5, Color3.fromRGB(168, 85, 247)),  -- ม่วง
+        ColorSequenceKeypoint.new(1.0, Color3.fromRGB(59, 130, 246)),  -- น้ำเงิน
+    }),
+    90
+)
+
+-- ล้าง gradient กลับเป็นสีเดี่ยว
+Fluent:ClearAccentGradient()
+```
+
+> Gradient จะถูกนำไปใช้กับทุก element ที่ใช้สี Accent (toggle, slider, selector, tab indicator ฯลฯ)
+
+---
+
+## 18. Tab Transition Styles
+
+เปลี่ยน animation ตอนสลับ Tab — มี 3 สไตล์
+
+```lua
+-- ตั้งก่อนหรือหลังสร้าง Window ก็ได้
+Fluent.TransitionStyle = "slide"   -- ค่าเริ่มต้น
+```
+
+| Style | คำอธิบาย | ลักษณะ |
+|-------|----------|--------|
+| `"slide"` | **Slide** (ค่าเริ่มต้น) | เลื่อนซ้าย-ขวา + fade |
+| `"fade"` | **Crossfade** | จางหาย แล้วค่อยโผล่ |
+| `"scale"` | **Scale** | ย่อ + fade out, แล้วขยาย + fade in |
+
+```lua
+-- เปลี่ยน style ตอนรันก็ได้ (มีผลทันที)
+Fluent.TransitionStyle = "scale"
+```
+
+> **Tip:** สไตล์ `"fade"` เหมาะกับ UI ที่เรียบง่าย, `"scale"` ให้ความรู้สึก modern, `"slide"` เป็น default ที่ smooth
+
+---
+
+## 19. ตัวอย่างเต็ม
 
 ### โครงสร้างพื้นฐาน (Starter Template)
 
@@ -840,8 +1008,23 @@ SaveManager:SetFolder("MyScript")
 SaveManager:IgnoreThemeSettings()
 SaveManager:BuildConfigSection(Tabs.Settings)
 
+-- 5.1) Profile System (ใช้แทนหรือพร้อมกับ BuildConfigSection ก็ได้)
+SaveManager:BuildProfileSection(Tabs.Settings)
+
+-- 5.2) Favorites Section
+Fluent:BuildFavoritesSection(Tabs.Settings)
+
 -- 6) เลือก Tab + แจ้งเตือน
 Window:SelectTab(1)
+
+-- 6.1) Tab Transition Style
+Fluent.TransitionStyle = "slide"  -- "slide" | "fade" | "scale"
+
+-- 6.2) Gradient Accent (ไม่บังคับ)
+Fluent:SetAccentGradient(
+    ColorSequence.new(Color3.fromRGB(139, 92, 246), Color3.fromRGB(59, 130, 246)),
+    45
+)
 
 Fluent:Notify({
     Title      = "My Script",
@@ -850,7 +1033,18 @@ Fluent:Notify({
     Duration   = 5,
 })
 
--- 7) โหลด Config ที่บันทึกไว้
+-- 7) Changelog (แสดงครั้งเดียวต่อ version)
+Fluent:Changelog({
+    Title   = "My Script",
+    Version = "1.0.0",
+    Items = {
+        { Type = "added", Text = "Auto Farm system" },
+        { Type = "added", Text = "Profile quick-switch" },
+        { Type = "improved", Text = "Performance optimization" },
+    },
+})
+
+-- 8) โหลด Config ที่บันทึกไว้
 SaveManager:LoadAutoloadConfig()
 ```
 
@@ -896,6 +1090,13 @@ SaveManager:LoadAutoloadConfig()
 | `Fluent:ToggleAcrylic(bool)` | เปิด/ปิด Acrylic |
 | `Fluent:ToggleTransparency(bool)` | เปิด/ปิดโปร่งใส |
 | `Fluent:Destroy()` | ทำลาย UI ทั้งหมด |
+| `Fluent:Changelog(config)` | แสดง Changelog popup |
+| `Fluent:BuildFavoritesSection(tab)` | สร้าง Favorites section ใน tab |
+| `Fluent:IsFavorite(idx)` | เช็คว่า element ถูก pin ไหม |
+| `Fluent:ToggleFavorite(idx)` | Pin/Unpin element |
+| `Fluent:SetAccentGradient(colors, rotation)` | ตั้ง gradient accent |
+| `Fluent:ClearAccentGradient()` | ล้าง gradient กลับสีเดี่ยว |
+| `Fluent.TransitionStyle` | เปลี่ยนสไตล์ animation เปลี่ยน tab (`"slide"` / `"fade"` / `"scale"`) |
 | `Fluent.Options` | ตาราง element ทั้งหมด (อ้างอิงจาก Flag) |
 4. รอฟาร์มเสร็จ auto replay!
 
