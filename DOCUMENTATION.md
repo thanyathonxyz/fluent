@@ -681,10 +681,34 @@ local Window = Fluent:CreateWindow({
         Image    = "rbxassetid://10734896206",     -- ไอคอน (rbxassetid)
         Shape    = "Circle",                       -- "Circle" | "Square" | "Logo"
         Size     = 50,                             -- ขนาด (px)
+        Position = "TopCenter",                    -- ตำแหน่งเริ่มต้น (ดูตาราง)
         -- Color = Color3.fromRGB(139, 92, 246),   -- สี (nil = ตามธีม Accent)
-        -- Position = UDim2.new(0, 15, 0.5, -25),  -- ตำแหน่งเริ่มต้น
     },
 })
+```
+
+### ตำแหน่ง (Position)
+
+ใส่ชื่อ preset (string) หรือ UDim2 ก็ได้:
+
+| Preset | ตำแหน่ง |
+|--------|---------|
+| `"TopLeft"` | มุมซ้ายบน |
+| `"TopCenter"` | **กลางบน (ค่าเริ่มต้น)** |
+| `"TopRight"` | มุมขวาบน |
+| `"Left"` | กลางซ้าย |
+| `"Center"` | กลางจอ |
+| `"Right"` | กลางขวา |
+| `"BottomLeft"` | มุมซ้ายล่าง |
+| `"BottomCenter"` | กลางล่าง |
+| `"BottomRight"` | มุมขวาล่าง |
+
+```lua
+-- ใช้ preset string
+ToggleButton = { Position = "BottomRight", Shape = "Circle", Size = 50 }
+
+-- หรือใช้ UDim2 กำหนดเอง
+ToggleButton = { Position = UDim2.new(0.5, -25, 0, 80), Shape = "Circle", Size = 50 }
 ```
 
 ปุ่มลากได้ — กดสั้นๆ = เปิด/ปิด UI, ลากค้าง = ย้ายตำแหน่ง

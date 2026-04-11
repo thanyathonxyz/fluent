@@ -459,8 +459,27 @@ return function(Config)
 			local TBImage = TBConfig.Image or Config.Icon or nil
 			local UseCustomColor = TBConfig.Color ~= nil
 			local TBColor = TBConfig.Color or Color3.fromRGB(76, 115, 255)
-			local TBPosition = TBConfig.Position or UDim2.new(0, 15, 0.5, -TBSize / 2)
 			local IsLogoOnly = (TBShape == "Logo")
+
+			-- Resolve position: supports UDim2 or preset string
+			local TBPositionRaw = TBConfig.Position or "TopCenter"
+			local TBPosition
+			if typeof(TBPositionRaw) == "UDim2" then
+				TBPosition = TBPositionRaw
+			else
+				local presets = {
+					TopLeft      = UDim2.new(0, 15, 0, 15),
+					TopCenter    = UDim2.new(0.5, -TBSize / 2, 0, 15),
+					TopRight     = UDim2.new(1, -TBSize - 15, 0, 15),
+					Left         = UDim2.new(0, 15, 0.5, -TBSize / 2),
+					Center       = UDim2.new(0.5, -TBSize / 2, 0.5, -TBSize / 2),
+					Right        = UDim2.new(1, -TBSize - 15, 0.5, -TBSize / 2),
+					BottomLeft   = UDim2.new(0, 15, 1, -TBSize - 15),
+					BottomCenter = UDim2.new(0.5, -TBSize / 2, 1, -TBSize - 15),
+					BottomRight  = UDim2.new(1, -TBSize - 15, 1, -TBSize - 15),
+				}
+				TBPosition = presets[TBPositionRaw] or presets["TopCenter"]
+			end
 
 			local CornerRadius
 			if TBShape == "Circle" then
