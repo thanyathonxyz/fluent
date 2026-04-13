@@ -1,6 +1,7 @@
 local Root = script.Parent.Parent
 local Flipper = require(Root.Packages.Flipper)
 local Creator = require(Root.Creator)
+local TweenService = game:GetService("TweenService")
 
 local New = Creator.New
 local Spring = Flipper.Spring.new
@@ -153,29 +154,39 @@ function TabModule:New(Title, Icon, Parent)
     local Label = Tab.Frame.Label
     local IconLabel = Tab.IconLabel
 
+	local _glowTween, _labelTween, _iconTween -- Track active tweens to prevent overlap
+
 	Tab.Update = function()
 		local Selected = TabModule.SelectedTab == TabIndex
 		Tab.Selected = Selected
-		Tab.SetTransparency(Selected and 0.85 or 1) -- Slightly darker for better contrast
-        
-        -- Soft Glow 
-        game:GetService("TweenService"):Create(Tab.Frame.Glow, TweenInfo.new(0.3, Enum.EasingStyle.Quad), { 
-            BackgroundTransparency = Selected and 0.9 or 1 
-        }):Play()
-        
-        -- Magnetic Text Shift & Theme-Adaptive Visibility
-        game:GetService("TweenService"):Create(Label, TweenInfo.new(0.2, Enum.EasingStyle.Quad), { 
-            Position = UDim2.new(0, Selected and (Icon and 38 or 20) or (Icon and 32 or 14), 0.5, 0),
-            TextColor3 = Creator.GetThemeProperty("Text"), -- Adapt to theme
-            TextTransparency = Selected and 0 or 0.45 
-        }):Play()
+		Tab.SetTransparency(Selected and 0.85 or 1)
 
-        if IconLabel then
-             game:GetService("TweenService"):Create(IconLabel, TweenInfo.new(0.2, Enum.EasingStyle.Quad), { 
-                ImageColor3 = Creator.GetThemeProperty("Text"), -- Sync with Text Color (White/Black)
-                ImageTransparency = Selected and 0 or 0.45
-            }):Play()
-        end
+		-- Cancel previous tweens before creating new ones
+		if _glowTween then _glowTween:Cancel() end
+		if _labelTween then _labelTween:Cancel() end
+		if _iconTween then _iconTween:Cancel() end
+
+		-- Soft Glow
+		_glowTween = TweenService:Create(Tab.Frame.Glow, TweenInfo.new(0.3, Enum.EasingStyle.Quart), {
+			BackgroundTransparency = Selected and 0.9 or 1
+		})
+		_glowTween:Play()
+
+		-- Magnetic Text Shift & Theme-Adaptive Visibility
+		_labelTween = TweenService:Create(Label, TweenInfo.new(0.2, Enum.EasingStyle.Quart), {
+			Position = UDim2.new(0, Selected and (Icon and 38 or 20) or (Icon and 32 or 14), 0.5, 0),
+			TextColor3 = Creator.GetThemeProperty("Text"),
+			TextTransparency = Selected and 0 or 0.45
+		})
+		_labelTween:Play()
+
+		if IconLabel then
+			_iconTween = TweenService:Create(IconLabel, TweenInfo.new(0.2, Enum.EasingStyle.Quart), {
+				ImageColor3 = Creator.GetThemeProperty("Text"),
+				ImageTransparency = Selected and 0 or 0.45
+			})
+			_iconTween:Play()
+		end
 	end
 
 	Creator.AddSignal(Tab.Frame.MouseEnter, function()
@@ -227,7 +238,6 @@ function TabModule:SelectTab(Tab)
 	if TabModule.SelectedTab == Tab then return end -- Skip if already selected
 	
 	local Window = TabModule.Window
-	local TweenService = game:GetService("TweenService")
 	local Library = Window.Library
 
 	TabModule.SelectedTab = Tab
@@ -263,7 +273,7 @@ function TabModule:SelectTab(Tab)
 			Window.ContainerBackMotor:setGoal(Spring(1, { frequency = 10 }))
 			local ScaleOut = TweenService:Create(
 				Window.ContainerHolder,
-				TweenInfo.new(0.12, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
+				TweenInfo.new(0.12, Enum.EasingStyle.Quart, Enum.EasingDirection.Out),
 				{ Size = UDim2.new(0.96, 0, 0.96, 0), Position = UDim2.fromScale(0.02, 0.02) }
 			)
 			ScaleOut:Play()
@@ -277,7 +287,7 @@ function TabModule:SelectTab(Tab)
 			Window.ContainerBackMotor:setGoal(Spring(0, { frequency = 6 }))
 			local ScaleIn = TweenService:Create(
 				Window.ContainerHolder,
-				TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
+				TweenInfo.new(0.2, Enum.EasingStyle.Quart, Enum.EasingDirection.Out),
 				{ Size = UDim2.fromScale(1, 1), Position = UDim2.fromScale(0, 0) }
 			)
 			ScaleIn:Play()
@@ -290,7 +300,7 @@ function TabModule:SelectTab(Tab)
 
 			local SlideOut = TweenService:Create(
 				Window.ContainerHolder,
-				TweenInfo.new(0.15, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
+				TweenInfo.new(0.15, Enum.EasingStyle.Quart, Enum.EasingDirection.Out),
 				{ Position = UDim2.new(0, -20, 0, 0) }
 			)
 			SlideOut:Play()
@@ -310,7 +320,7 @@ function TabModule:SelectTab(Tab)
 
 			local SlideIn = TweenService:Create(
 				Window.ContainerHolder,
-				TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
+				TweenInfo.new(0.2, Enum.EasingStyle.Quart, Enum.EasingDirection.Out),
 				{ Position = UDim2.new(0, 0, 0, 0) }
 			)
 			SlideIn:Play()

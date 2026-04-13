@@ -121,12 +121,10 @@ function Element:New(Idx, Config)
 	end)
 
 	Creator.AddSignal(UserInputService.InputChanged, function(Input)
+		if not Dragging then return end
 		if
-			Dragging
-			and (
-				Input.UserInputType == Enum.UserInputType.MouseMovement
-				or Input.UserInputType == Enum.UserInputType.Touch
-			)
+			Input.UserInputType == Enum.UserInputType.MouseMovement
+			or Input.UserInputType == Enum.UserInputType.Touch
 		then
 			local SizeScale =
 				math.clamp((Input.Position.X - SliderRail.AbsolutePosition.X) / SliderRail.AbsoluteSize.X, 0, 1)

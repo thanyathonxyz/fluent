@@ -7,6 +7,14 @@ local Creator = {
 	Signals = {},
 	TransparencyMotors = {},
 	CurrentTheme = "Night", -- Default theme
+
+	-- Pre-cached TweenInfos to avoid repeated allocation
+	TweenInfos = {
+		Fast = TweenInfo.new(0.15, Enum.EasingStyle.Quart, Enum.EasingDirection.Out),
+		Normal = TweenInfo.new(0.25, Enum.EasingStyle.Quart, Enum.EasingDirection.Out),
+		Smooth = TweenInfo.new(0.35, Enum.EasingStyle.Quint, Enum.EasingDirection.Out),
+		Bounce = TweenInfo.new(0.4, Enum.EasingStyle.Back, Enum.EasingDirection.Out),
+	},
 	DefaultProperties = {
 		ScreenGui = {
 			ResetOnSpawn = false,
@@ -101,10 +109,11 @@ function Creator.GetThemeProperty(Property)
 end
 
 function Creator.UpdateTheme()
+	-- Collect dead keys first to avoid mutating table during iteration
+	local deadKeys = {}
 	for Instance, Object in next, Creator.Registry do
-		-- Skip destroyed objects
-		if not Instance or typeof(Instance) ~= "Instance" then
-			Creator.Registry[Instance] = nil
+		if not Instance or typeof(Instance) ~= "Instance" or not Instance.Parent then
+			table.insert(deadKeys, Instance)
 			continue
 		end
 
@@ -122,8 +131,11 @@ function Creator.UpdateTheme()
 			end
 		end
 		if not alive then
-			Creator.Registry[Instance] = nil
+			table.insert(deadKeys, Instance)
 		end
+	end
+	for _, key in ipairs(deadKeys) do
+		Creator.Registry[key] = nil
 	end
 
 	for _, Motor in next, Creator.TransparencyMotors do
@@ -135,15 +147,19 @@ function Creator.UpdateTheme()
 end
 
 function Creator.AddThemeObject(Object, Properties)
-	local Idx = #Creator.Registry + 1
 	local Data = {
 		Object = Object,
 		Properties = Properties,
-		Idx = Idx,
 	}
 
 	Creator.Registry[Object] = Data
-	Creator.UpdateTheme()
+	-- Apply theme to this object only (avoid full UpdateTheme for each registration)
+	for Property, ColorIdx in next, Properties do
+		local ThemeValue = Creator.GetThemeProperty(ColorIdx)
+		if ThemeValue ~= nil then
+			pcall(function() Object[Property] = ThemeValue end)
+		end
+	end
 	return Object
 end
 
@@ -185,7 +201,9 @@ function Creator.SpringMotor(Initial, Instance, Prop, IgnoreDialogCheck, ResetOn
 	ResetOnThemeChange = ResetOnThemeChange or false
 	local Motor = Flipper.SingleMotor.new(Initial)
 	Motor:onStep(function(value)
-		Instance[Prop] = value
+		if typeof(Instance) == "Instance" and Instance.Parent then
+			Instance[Prop] = value
+		end
 	end)
 
 	if ResetOnThemeChange then

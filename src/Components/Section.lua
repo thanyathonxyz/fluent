@@ -147,10 +147,12 @@ return function(TitleOrConfig, Parent)
 					Size = UDim2.new(1, 0, 0, 0)
 				}):Play()
 				tween:Play()
-				tween.Completed:Connect(function()
+				local conn
+				conn = tween.Completed:Connect(function()
 					if not Section.Opened then
 						Section.Container.Visible = false
 					end
+					if conn then conn:Disconnect() conn = nil end
 				end)
 			else
 				Section.Container.Visible = false

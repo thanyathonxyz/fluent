@@ -2,6 +2,7 @@
 local UserInputService = game:GetService("UserInputService")
 local Mouse = game:GetService("Players").LocalPlayer:GetMouse()
 local Camera = game:GetService("Workspace").CurrentCamera
+local TweenService = game:GetService("TweenService")
 
 local Root = script.Parent.Parent
 local Flipper = require(Root.Packages.Flipper)
@@ -227,13 +228,13 @@ return function(Config)
 	end)
 
 	local LastValue = 0
-	local LastTime = 0
+	local LastTime = os.clock()
 	Window.SelectorPosMotor:onStep(function(Value)
 		Selector.Position = UDim2.new(0, 0, 0, Value + 17)
-		local Now = tick()
+		local Now = os.clock()
 		local DeltaTime = Now - LastTime
 
-		if LastValue ~= nil then
+		if LastValue ~= nil and DeltaTime > 0 then
 			Window.SelectorSizeMotor:setGoal(Spring((math.abs(Value - LastValue) / (DeltaTime * 60)) + 16))
 			LastValue = Value
 		end
@@ -298,12 +299,15 @@ return function(Config)
 				Window.AcrylicPaint.SetVisibility(false)
 			end
 
-			Input.Changed:Connect(function()
+			-- Track connection so we can disconnect it when input ends
+			local conn
+			conn = Input.Changed:Connect(function()
 				if Input.UserInputState == Enum.UserInputState.End then
 					Dragging = false
 					if Window.AcrylicPaint and Window.AcrylicPaint.SetVisibility then
 						Window.AcrylicPaint.SetVisibility(true)
 					end
+					if conn then conn:Disconnect() conn = nil end
 				end
 			end)
 		end
@@ -557,7 +561,8 @@ return function(Config)
 						Window.ToggleButton.BackgroundTransparency = 0.35
 					end
 
-					Input.Changed:Connect(function()
+					local conn
+					conn = Input.Changed:Connect(function()
 						if Input.UserInputState == Enum.UserInputState.End then
 							TBDragging = false
 							if not IsLogoOnly then
@@ -566,6 +571,7 @@ return function(Config)
 							if not DidDrag then
 								Window:Minimize()
 							end
+							if conn then conn:Disconnect() conn = nil end
 						end
 					end)
 				end
@@ -667,7 +673,7 @@ return function(Config)
 
 	Creator.AddSignal(Window.TabHolder:GetPropertyChangedSignal("CanvasPosition"), function()
 		LastValue = TabModule:GetCurrentTabPos() + 16
-		LastTime = 0
+		LastTime = os.clock()
 		Window.SelectorPosMotor:setGoal(Instant(TabModule:GetCurrentTabPos()))
 	end)
 

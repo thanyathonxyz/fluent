@@ -544,15 +544,22 @@ end
 -- =============================================
 -- FAVORITES / PINS SYSTEM
 -- =============================================
-function Library:IsFavorite(idx)
+-- Hash set for O(1) lookup
+local _favoritesSet = {}
+local function _rebuildFavoritesSet()
+	_favoritesSet = {}
 	for _, v in ipairs(Library.Favorites) do
-		if v == idx then return true end
+		_favoritesSet[v] = true
 	end
-	return false
+end
+
+function Library:IsFavorite(idx)
+	return _favoritesSet[idx] == true
 end
 
 function Library:ToggleFavorite(idx)
 	if Library:IsFavorite(idx) then
+		_favoritesSet[idx] = nil
 		for i, v in ipairs(Library.Favorites) do
 			if v == idx then
 				table.remove(Library.Favorites, i)
@@ -561,6 +568,7 @@ function Library:ToggleFavorite(idx)
 		end
 	else
 		table.insert(Library.Favorites, idx)
+		_favoritesSet[idx] = true
 	end
 	Library:SaveFavorites()
 	Library:_rebuildFavoritesUI()
@@ -588,6 +596,7 @@ function Library:LoadFavorites()
 				local decodeOk, data = pcall(httpService.JSONDecode, httpService, content)
 				if decodeOk and type(data) == "table" then
 					Library.Favorites = data
+					_rebuildFavoritesSet()
 				end
 			end
 		end
@@ -598,6 +607,7 @@ function Library:_attachPinButton(element, idx)
 	if not element.Frame then return end
 
 	local isPinned = Library:IsFavorite(idx)
+	local _pinTween -- Track active tween to cancel overlap
 
 	local PinBtn = New("TextButton", {
 		Text = isPinned and "\226\152\133" or "\226\152\134",
@@ -619,20 +629,26 @@ function Library:_attachPinButton(element, idx)
 		Library:ToggleFavorite(idx)
 		local pinned = Library:IsFavorite(idx)
 		PinBtn.Text = pinned and "\226\152\133" or "\226\152\134"
-		TweenService:Create(PinBtn, TweenInfo.new(0.2), {
+		if _pinTween then _pinTween:Cancel() end
+		_pinTween = TweenService:Create(PinBtn, TweenInfo.new(0.2), {
 			TextColor3 = pinned and Creator.GetThemeProperty("Accent") or Color3.fromRGB(120, 120, 120),
 			TextTransparency = pinned and 0 or 0.6,
-		}):Play()
+		})
+		_pinTween:Play()
 	end)
 
 	Creator.AddSignal(element.Frame.MouseEnter, function()
 		if not Library:IsFavorite(idx) then
-			TweenService:Create(PinBtn, TweenInfo.new(0.15), { TextTransparency = 0.3 }):Play()
+			if _pinTween then _pinTween:Cancel() end
+			_pinTween = TweenService:Create(PinBtn, TweenInfo.new(0.15), { TextTransparency = 0.3 })
+			_pinTween:Play()
 		end
 	end)
 	Creator.AddSignal(element.Frame.MouseLeave, function()
 		if not Library:IsFavorite(idx) then
-			TweenService:Create(PinBtn, TweenInfo.new(0.15), { TextTransparency = 0.6 }):Play()
+			if _pinTween then _pinTween:Cancel() end
+			_pinTween = TweenService:Create(PinBtn, TweenInfo.new(0.15), { TextTransparency = 0.6 })
+			_pinTween:Play()
 		end
 	end)
 end

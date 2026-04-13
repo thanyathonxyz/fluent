@@ -26,8 +26,24 @@ function Notification:Init(GUI)
 	})
 end
 
+local MAX_NOTIFICATIONS = 5
+
 function Notification:New(Config)
 	if not Config then Config = {} end
+
+	-- Enforce max concurrent notifications by dismissing oldest
+	if Notification.Holder then
+		local children = {}
+		for _, child in ipairs(Notification.Holder:GetChildren()) do
+			if child:IsA("GuiObject") and not child:IsA("UIListLayout") then
+				table.insert(children, child)
+			end
+		end
+		while #children >= MAX_NOTIFICATIONS do
+			children[1]:Destroy()
+			table.remove(children, 1)
+		end
+	end
 	Config.Title = Config.Title or "Title"
 	Config.Content = Config.Content or "Content"
 	Config.SubContent = Config.SubContent or ""
