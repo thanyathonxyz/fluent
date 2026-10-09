@@ -622,7 +622,7 @@ Fluent:SetTheme("MyTheme")
 
 ## 9. SaveManager
 
-ระบบ Save/Load Config อัตโนมัติ — บันทึกค่า Toggle, Slider, Dropdown, Input, Keybind, Colorpicker
+ระบบ Save/Load Config อัตโนมัติ — บันทึกค่า Toggle, Slider, Dropdown, Input, Keybind, Colorpicker, Stepper, SelectionList
 
 ### ตั้งค่า
 
@@ -644,6 +644,13 @@ SaveManager:LoadAutoloadConfig()
 ```lua
 SaveManager:Save("MyConfig")  -- บันทึก
 SaveManager:Load("MyConfig")  -- โหลด
+```
+
+### คัดลอก / วาง Config ผ่าน Clipboard (แชร์ให้คนอื่นง่ายๆ)
+
+```lua
+SaveManager:ExportToClipboard()  -- คัดลอก config ปัจจุบันลง Clipboard
+SaveManager:ImportFromClipboard() -- โหลด config จากที่คัดลอกไว้ใน Clipboard
 ```
 
 ### ไม่ save บาง element

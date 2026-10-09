@@ -392,9 +392,26 @@ function Element:New(Idx, Config)
 		end
 	end
 
+	local function CleanDropdownItems()
+		if Dropdown._connections then
+			for _, conn in ipairs(Dropdown._connections) do
+				pcall(function() conn:Disconnect() end)
+			end
+		end
+		Dropdown._connections = {}
+
+		if Dropdown._motors then
+			for _, motor in ipairs(Dropdown._motors) do
+				pcall(function() motor:stop() end)
+			end
+		end
+		Dropdown._motors = {}
+	end
+
 	function Dropdown:BuildDropdownList()
+		CleanDropdownItems()
 		local Values = Dropdown.Values
-		Dropdown.Buttons = {} -- Use Dropdown.Buttons instead of local
+		Dropdown.Buttons = {}
 		local mobile = IsMobile()
 		local optionHeight = mobile and 46 or 38
 		local optionTextSize = mobile and 16 or 14
@@ -472,20 +489,30 @@ function Element:New(Idx, Config)
 			local SelMotor, SetSelTransparency = Creator.SpringMotor(1, ButtonSelector, "BackgroundTransparency")
 			local SelectorSizeMotor = Flipper.SingleMotor.new(6)
 
+			table.insert(Dropdown._motors, BackMotor)
+			table.insert(Dropdown._motors, SelMotor)
+			table.insert(Dropdown._motors, SelectorSizeMotor)
+
 			SelectorSizeMotor:onStep(function(value)
 				ButtonSelector.Size = UDim2.new(0, 4, 0, value)
 			end)
 
-			Creator.AddSignal(Button.MouseEnter, function()
+			local function addConn(sig, fn)
+				local c = sig:Connect(fn)
+				table.insert(Dropdown._connections, c)
+				return c
+			end
+
+			addConn(Button.MouseEnter, function()
 				SetBackTransparency(Selected and 0.85 or 0.89)
 			end)
-			Creator.AddSignal(Button.MouseLeave, function()
+			addConn(Button.MouseLeave, function()
 				SetBackTransparency(Selected and 0.89 or 1)
 			end)
-			Creator.AddSignal(Button.MouseButton1Down, function()
+			addConn(Button.MouseButton1Down, function()
 				SetBackTransparency(0.92)
 			end)
-			Creator.AddSignal(Button.MouseButton1Up, function()
+			addConn(Button.MouseButton1Up, function()
 				SetBackTransparency(Selected and 0.85 or 0.89)
 			end)
 
@@ -504,33 +531,28 @@ function Element:New(Idx, Config)
 				SetSelTransparency(Selected and 0 or 1)
 			end
 
-			Creator.AddSignal(ButtonLabel.InputBegan, function(Input)
-				if
-					Input.UserInputType == Enum.UserInputType.MouseButton1
-					or Input.UserInputType == Enum.UserInputType.Touch
-				then
-					local Try = not Selected
+			addConn(Button.Activated, function()
+				local Try = not Selected
 
-					if Dropdown:GetActiveValues() == 1 and not Try and not Config.AllowNull then
+				if Dropdown:GetActiveValues() == 1 and not Try and not Config.AllowNull then
+				else
+					if Config.Multi then
+						Selected = Try
+						Dropdown.Value[Value] = Selected and true or nil
 					else
-						if Config.Multi then
-							Selected = Try
-							Dropdown.Value[Value] = Selected and true or nil
-						else
-							Selected = Try
-							Dropdown.Value = Selected and Value or nil
+						Selected = Try
+						Dropdown.Value = Selected and Value or nil
 
-							for _, OtherButton in next, Dropdown.Buttons do
-								OtherButton:UpdateButton()
-							end
+						for _, OtherButton in next, Dropdown.Buttons do
+							OtherButton:UpdateButton()
 						end
-
-						Table:UpdateButton()
-						Dropdown:Display()
-
-						Library:SafeCallback(Dropdown.Callback, Dropdown.Value)
-						Library:SafeCallback(Dropdown.Changed, Dropdown.Value)
 					end
+
+					Table:UpdateButton()
+					Dropdown:Display()
+
+					Library:SafeCallback(Dropdown.Callback, Dropdown.Value)
+					Library:SafeCallback(Dropdown.Changed, Dropdown.Value)
 				end
 			end)
 
@@ -596,8 +618,18 @@ function Element:New(Idx, Config)
 	end
 
 	function Dropdown:Destroy()
+		CleanDropdownItems()
 		DropdownFrame:Destroy()
 		DropdownDimmer:Destroy()
+		pcall(function()
+			DropdownHolderCanvas:Destroy()
+		end)
+		for i, v in ipairs(Library.OpenFrames) do
+			if v == DropdownHolderCanvas then
+				table.remove(Library.OpenFrames, i)
+				break
+			end
+		end
 		Library.Options[Idx] = nil
 	end
 

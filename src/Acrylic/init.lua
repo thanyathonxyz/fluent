@@ -13,15 +13,23 @@ function Acrylic.init()
 	local depthOfFieldDefaults = {}
 
 	function Acrylic.Enable()
-		for _, effect in pairs(depthOfFieldDefaults) do
-			effect.Enabled = false
+		for object in pairs(depthOfFieldDefaults) do
+			if typeof(object) == "Instance" and object.Parent then
+				pcall(function()
+					object.Enabled = false
+				end)
+			end
 		end
 		baseEffect.Parent = game:GetService("Lighting")
 	end
 
 	function Acrylic.Disable()
-		for _, effect in pairs(depthOfFieldDefaults) do
-			effect.Enabled = effect.enabled
+		for object, state in pairs(depthOfFieldDefaults) do
+			if typeof(object) == "Instance" and object.Parent then
+				pcall(function()
+					object.Enabled = state.enabled
+				end)
+			end
 		end
 		baseEffect.Parent = nil
 	end

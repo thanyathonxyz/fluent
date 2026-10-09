@@ -8,7 +8,12 @@ local Element = {}
 Element.__index = Element
 Element.__type = "Button"
 
-function Element:New(Config)
+function Element:New(Idx, Config)
+	if type(Idx) == "table" and Config == nil then
+		Config = Idx
+		Idx = nil
+	end
+	Config = Config or {}
 	assert(Config.Title, "Button - Missing Title")
 	Config.Callback = Config.Callback or function() end
 

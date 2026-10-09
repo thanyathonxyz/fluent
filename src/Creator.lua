@@ -3,7 +3,7 @@ local Themes = require(Root.Themes)
 local Flipper = require(Root.Packages.Flipper)
 
 local Creator = {
-	Registry = {},
+	Registry = setmetatable({}, { __mode = "k" }),
 	Signals = {},
 	TransparencyMotors = {},
 	CurrentTheme = "Night", -- Default theme

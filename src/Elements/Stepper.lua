@@ -97,7 +97,12 @@ function Element:New(Idx, Config)
 	end
 
 	function Stepper:SetValue(Value)
-		local Rounded = Library:Round(math.clamp(Value, Stepper.Min, Stepper.Max), 2)
+		Value = tonumber(Value) or Stepper.Min
+		local decimals = 0
+		if Stepper.Step and tostring(Stepper.Step):find("%.") then
+			decimals = #tostring(Stepper.Step) - tostring(Stepper.Step):find("%.")
+		end
+		local Rounded = Library:Round(math.clamp(Value, Stepper.Min, Stepper.Max), decimals)
 		self.Value = Rounded
 		ValueLabel.Text = tostring(Rounded)
 

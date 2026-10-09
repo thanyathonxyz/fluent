@@ -159,6 +159,53 @@ function Notification:New(Config)
 		NewNotification.SubContentLabel.Visible = false
 	end
 
+	if Config.Buttons and #Config.Buttons > 0 then
+		local ButtonHolder = New("Frame", {
+			Size = UDim2.new(1, 0, 0, 26),
+			BackgroundTransparency = 1,
+			LayoutOrder = 99,
+			Parent = NewNotification.LabelHolder,
+		}, {
+			New("UIListLayout", {
+				FillDirection = Enum.FillDirection.Horizontal,
+				Padding = UDim.new(0, 8),
+				HorizontalAlignment = Enum.HorizontalAlignment.Right,
+				VerticalAlignment = Enum.VerticalAlignment.Center,
+			}),
+		})
+
+		for _, btnData in ipairs(Config.Buttons) do
+			local btn = New("TextButton", {
+				Size = UDim2.fromOffset(0, 24),
+				AutomaticSize = Enum.AutomaticSize.X,
+				BackgroundColor3 = Color3.fromRGB(40, 45, 55),
+				BackgroundTransparency = 0.3,
+				Text = btnData.Title or "Button",
+				TextSize = 12,
+				FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.Medium),
+				Parent = ButtonHolder,
+				ThemeTag = {
+					BackgroundColor3 = "Element",
+					TextColor3 = "Text",
+				},
+			}, {
+				New("UICorner", { CornerRadius = UDim.new(0, 4) }),
+				New("UIPadding", { PaddingLeft = UDim.new(0, 10), PaddingRight = UDim.new(0, 10) }),
+				New("UIStroke", {
+					Transparency = 0.6,
+					ThemeTag = { Color = "ElementBorder" },
+				}),
+			})
+
+			btn.MouseButton1Click:Connect(function()
+				if btnData.Callback then
+					require(Root):SafeCallback(btnData.Callback)
+				end
+				NewNotification:Close()
+			end)
+		end
+	end
+
 	NewNotification.Holder = New("Frame", {
 		BackgroundTransparency = 1,
 		Size = UDim2.new(1, 0, 0, 200),
@@ -181,8 +228,10 @@ function Notification:New(Config)
 	end)
 
 	function NewNotification:Open()
-		local ContentSize = NewNotification.LabelHolder.AbsoluteSize.Y
-		NewNotification.Holder.Size = UDim2.new(1, 0, 0, 58 + ContentSize)
+		task.defer(function()
+			local ContentSize = NewNotification.LabelHolder.AbsoluteSize.Y
+			NewNotification.Holder.Size = UDim2.new(1, 0, 0, math.max(68, 52 + ContentSize))
+		end)
 
 		RootMotor:setGoal({
 			Scale = Spring(0, { frequency = 5 }),
@@ -199,6 +248,9 @@ function Notification:New(Config)
 					Offset = Spring(60, { frequency = 5 }),
 				})
 				task.wait(0.4)
+				pcall(function()
+					RootMotor:stop()
+				end)
 				pcall(function()
 					if require(Root).UseAcrylic and NewNotification.AcrylicPaint.Model then
 						NewNotification.AcrylicPaint.Model:Destroy()

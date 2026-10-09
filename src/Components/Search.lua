@@ -243,9 +243,13 @@ return function(Parent, Window, OnSearchCallback)
 			end
 		end
 
-		-- Navigate to the tab containing the first match
+		-- Only navigate to another tab if current tab has no matches
+		local TabModule = require(Root.Components.Tab)
+		local currentTab = TabModule and TabModule.SelectedTab
 		if foundTabIndex and Window and Window.SelectTab then
-			Window:SelectTab(foundTabIndex)
+			if not currentTab or not tabsWithMatches[currentTab] then
+				Window:SelectTab(foundTabIndex)
+			end
 		end
 	end
 

@@ -12,11 +12,19 @@ function Element:New(Idx, Config)
 	assert(Config.Title, "SelectionList - Missing Title")
 	assert(Config.Values, "SelectionList - Missing Values")
 
+	local initialSelected = {}
+	if type(Config.Default) == "table" then
+		for _, v in ipairs(Config.Default) do
+			table.insert(initialSelected, v)
+		end
+	end
+
 	local SelectionList = {
 		Values = Config.Values,
-		Selected = Config.Default or {},
+		Selected = initialSelected,
 		Callback = Config.Callback or function(Value) end,
 		Type = "SelectionList",
+		Items = {},
 	}
 
 	local SelectionFrame = require(Components.Element)(Config.Title, Config.Description, self.Container, false)
@@ -37,6 +45,17 @@ function Element:New(Idx, Config)
 	local function CreateItem(Name)
 		local isSelected = table.find(SelectionList.Selected, Name) ~= nil
 		
+		local Dot = New("Frame", {
+			Size = UDim2.fromOffset(6, 6),
+			Position = UDim2.fromScale(0.5, 0.5),
+			AnchorPoint = Vector2.new(0.5, 0.5),
+			BackgroundColor3 = Color3.fromRGB(255, 255, 255),
+			Visible = isSelected,
+			BackgroundTransparency = 0.2
+		}, {
+			New("UICorner", { CornerRadius = UDim.new(1, 0) })
+		})
+
 		local Circle = New("Frame", {
 			Size = UDim2.fromOffset(16, 16),
 			BackgroundColor3 = isSelected and Color3.fromRGB(0, 120, 215) or Color3.fromRGB(35, 38, 45),
@@ -51,17 +70,7 @@ function Element:New(Idx, Config)
 				Color = Color3.fromRGB(255, 255, 255),
 				Transparency = isSelected and 0.4 or 0.8,
 			}),
-			-- Inner Dot
-			New("Frame", {
-				Size = UDim2.fromOffset(6, 6),
-				Position = UDim2.fromScale(0.5, 0.5),
-				AnchorPoint = Vector2.new(0.5, 0.5),
-				BackgroundColor3 = Color3.fromRGB(255, 255, 255),
-				Visible = isSelected,
-				BackgroundTransparency = 0.2
-			}, {
-				New("UICorner", { CornerRadius = UDim.new(1, 0) })
-			})
+			Dot,
 		})
 
 		local ItemBtn = New("TextButton", {
@@ -89,29 +98,78 @@ function Element:New(Idx, Config)
 			})
 		})
 
+		local function UpdateItemVisual()
+			local nowSelected = table.find(SelectionList.Selected, Name) ~= nil
+			Creator.OverrideTag(Circle, { BackgroundColor3 = nowSelected and "Accent" or "Element" })
+			Circle.BackgroundTransparency = nowSelected and 0 or 0.5
+			Dot.Visible = nowSelected
+		end
+
 		Creator.AddSignal(ItemBtn.MouseButton1Click, function()
-			local idx = table.find(SelectionList.Selected, Name)
-			if idx then
-				table.remove(SelectionList.Selected, idx)
+			local foundIdx = table.find(SelectionList.Selected, Name)
+			if foundIdx then
+				table.remove(SelectionList.Selected, foundIdx)
 			else
 				table.insert(SelectionList.Selected, Name)
 			end
 			
-			-- Visual update
-			local nowSelected = table.find(SelectionList.Selected, Name) ~= nil
-			Creator.OverrideTag(Circle, { BackgroundColor3 = nowSelected and "Accent" or "Element" })
-			Circle.BackgroundTransparency = nowSelected and 0 or 0.5
-			Circle:FindFirstChildOfClass("Frame").Visible = nowSelected
+			UpdateItemVisual()
 			
 			Library:SafeCallback(SelectionList.Callback, SelectionList.Selected)
-			if SelectionList.Changed then SelectionList.Changed(SelectionList.Selected) end
+			Library:SafeCallback(SelectionList.Changed, SelectionList.Selected)
 		end)
+
+		SelectionList.Items[Name] = {
+			Button = ItemBtn,
+			Update = UpdateItemVisual,
+		}
 
 		return ItemBtn
 	end
 
-	for _, Value in ipairs(Config.Values) do
-		CreateItem(Value)
+	local function BuildItems()
+		for _, child in ipairs(ListHolder:GetChildren()) do
+			if not child:IsA("UIListLayout") then
+				child:Destroy()
+			end
+		end
+		SelectionList.Items = {}
+		for _, Value in ipairs(SelectionList.Values) do
+			CreateItem(Value)
+		end
+	end
+
+	BuildItems()
+
+	function SelectionList:SetValue(Values)
+		local newSelected = {}
+		if type(Values) == "table" then
+			for _, v in ipairs(Values) do
+				if table.find(SelectionList.Values, v) then
+					table.insert(newSelected, v)
+				end
+			end
+		end
+		SelectionList.Selected = newSelected
+
+		for _, item in pairs(SelectionList.Items) do
+			item.Update()
+		end
+
+		Library:SafeCallback(SelectionList.Callback, SelectionList.Selected)
+		Library:SafeCallback(SelectionList.Changed, SelectionList.Selected)
+	end
+
+	function SelectionList:SetValues(NewValues)
+		SelectionList.Values = NewValues or {}
+		local filtered = {}
+		for _, v in ipairs(SelectionList.Selected) do
+			if table.find(SelectionList.Values, v) then
+				table.insert(filtered, v)
+			end
+		end
+		SelectionList.Selected = filtered
+		BuildItems()
 	end
 
 	function SelectionList:OnChanged(Func)

@@ -35,31 +35,6 @@ return function(Config)
 	local MinimizeNotif = false
 
 	Window.AcrylicPaint = Acrylic.AcrylicPaint()
-	-- App Icon
-	local AppIcon = Config.Icon and New("ImageLabel", {
-		Name = "AppIcon",
-		Size = UDim2.fromOffset(24, 24),
-		Position = UDim2.new(0, 10, 0.5, 0),
-		AnchorPoint = Vector2.new(0, 0.5),
-		BackgroundTransparency = 1,
-		Image = Config.Icon,
-		Parent = nil -- Will be added to TitleBar.Frame later
-	}) or nil
-
-	-- Title and Subtitle holder (Aligned to LEFT)
-	local TitleHolder = New("Frame", {
-		Size = UDim2.new(0, 0, 1, 0),
-		Position = UDim2.new(0, AppIcon and 40 or 12, 0, 0),
-		AnchorPoint = Vector2.new(0, 0),
-		ThemeTag = {
-			BackgroundColor3 = "Accent",
-		},
-	}, {
-		New("UICorner", {
-			CornerRadius = UDim.new(0, 2),
-		}),
-	})
-
 	Window.TabWidth = Config.TabWidth
 
 	local Selector = New("Frame", {
@@ -614,8 +589,15 @@ return function(Config)
     end
 
 	function Window:Destroy()
+		pcall(function() SizeMotor:stop() end)
+		pcall(function() PosMotor:stop() end)
+		pcall(function() Window.SelectorPosMotor:stop() end)
+		pcall(function() Window.SelectorSizeMotor:stop() end)
+		pcall(function() Window.ContainerBackMotor:stop() end)
+		pcall(function() Window.ContainerPosMotor:stop() end)
+
 		pcall(function()
-			if require(Root).UseAcrylic and Window.AcrylicPaint.Model then
+			if require(Root).UseAcrylic and Window.AcrylicPaint and Window.AcrylicPaint.Model then
 				Window.AcrylicPaint.Model:Destroy()
 			end
 		end)

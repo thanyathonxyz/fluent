@@ -38,6 +38,7 @@ function Element:New(Idx, Config)
 	local Box = Textbox.Input
 
 	function Input:SetValue(Text)
+		Text = tostring(Text or "")
 		if Config.MaxLength and #Text > Config.MaxLength then
 			Text = Text:sub(1, Config.MaxLength)
 		end
@@ -49,22 +50,23 @@ function Element:New(Idx, Config)
 		end
 
 		Input.Value = Text
-		Box.Text = Text
+		if Box.Text ~= Text then
+			Box.Text = Text
+		end
 
 		Library:SafeCallback(Input.Callback, Input.Value)
 		Library:SafeCallback(Input.Changed, Input.Value)
 	end
 
 	if Input.Finished then
-		AddSignal(Box.FocusLost, function(enter)
-			if not enter then
-				return
-			end
+		AddSignal(Box.FocusLost, function()
 			Input:SetValue(Box.Text)
 		end)
 	else
 		AddSignal(Box:GetPropertyChangedSignal("Text"), function()
-			Input:SetValue(Box.Text)
+			if Box.Text ~= Input.Value then
+				Input:SetValue(Box.Text)
+			end
 		end)
 	end
 

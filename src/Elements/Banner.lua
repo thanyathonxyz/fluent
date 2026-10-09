@@ -21,7 +21,12 @@ local StyleIcons = {
 	error   = "x-circle",
 }
 
-function Banner:New(Config)
+function Banner:New(Idx, Config)
+	if type(Idx) == "table" and Config == nil then
+		Config = Idx
+		Idx = nil
+	end
+	Config = Config or {}
 	Config.Title = Config.Title or "Banner"
 	Config.Content = Config.Content or Config.Desc or ""
 	Config.Style = Config.Style or "info"

@@ -133,47 +133,50 @@ function Element:New(Idx, Config)
 		Library.Options[Idx] = nil
 	end
 
+	local pickConn
 	Creator.AddSignal(KeybindDisplayFrame.InputBegan, function(Input)
 		if
 			Input.UserInputType == Enum.UserInputType.MouseButton1
 			or Input.UserInputType == Enum.UserInputType.Touch
 		then
+			if Picking then return end
 			Picking = true
 			KeybindDisplayLabel.Text = "..."
 
 			task.wait(0.2)
 
-			local Event
-			Event = UserInputService.InputBegan:Connect(function(Input)
-				local Key
+			if pickConn then pickConn:Disconnect() pickConn = nil end
 
-				if Input.UserInputType == Enum.UserInputType.Keyboard then
-					Key = Input.KeyCode.Name
-				elseif Input.UserInputType == Enum.UserInputType.MouseButton1 then
+			pickConn = UserInputService.InputBegan:Connect(function(bindInput)
+				local Key = nil
+
+				if bindInput.UserInputType == Enum.UserInputType.Keyboard then
+					if bindInput.KeyCode == Enum.KeyCode.Escape then
+						Picking = false
+						KeybindDisplayLabel.Text = Keybind.Value
+						if pickConn then pickConn:Disconnect() pickConn = nil end
+						return
+					elseif bindInput.KeyCode == Enum.KeyCode.Backspace or bindInput.KeyCode == Enum.KeyCode.Delete then
+						Key = "None"
+					else
+						Key = bindInput.KeyCode.Name
+					end
+				elseif bindInput.UserInputType == Enum.UserInputType.MouseButton1 then
 					Key = "MouseLeft"
-				elseif Input.UserInputType == Enum.UserInputType.MouseButton2 then
+				elseif bindInput.UserInputType == Enum.UserInputType.MouseButton2 then
 					Key = "MouseRight"
 				end
 
-				local EndedEvent
-				EndedEvent = UserInputService.InputEnded:Connect(function(Input)
-					if
-						Input.KeyCode.Name == Key
-						or Key == "MouseLeft" and Input.UserInputType == Enum.UserInputType.MouseButton1
-						or Key == "MouseRight" and Input.UserInputType == Enum.UserInputType.MouseButton2
-					then
-						Picking = false
+				if Key then
+					Picking = false
+					KeybindDisplayLabel.Text = Key
+					Keybind.Value = Key
 
-						KeybindDisplayLabel.Text = Key
-						Keybind.Value = Key
+					Library:SafeCallback(Keybind.ChangedCallback, bindInput.KeyCode or bindInput.UserInputType)
+					Library:SafeCallback(Keybind.Changed, bindInput.KeyCode or bindInput.UserInputType)
 
-						Library:SafeCallback(Keybind.ChangedCallback, Input.KeyCode or Input.UserInputType)
-						Library:SafeCallback(Keybind.Changed, Input.KeyCode or Input.UserInputType)
-
-						Event:Disconnect()
-						EndedEvent:Disconnect()
-					end
-				end)
+					if pickConn then pickConn:Disconnect() pickConn = nil end
+				end
 			end)
 		end
 	end)

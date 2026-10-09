@@ -6,7 +6,12 @@ local ButtonGroup = {}
 ButtonGroup.__index = ButtonGroup
 ButtonGroup.__type = "ButtonGroup"
 
-function ButtonGroup:New(Config)
+function ButtonGroup:New(Idx, Config)
+	if type(Idx) == "table" and Config == nil then
+		Config = Idx
+		Idx = nil
+	end
+	Config = Config or {}
 	local Library = self.Library
 	local Group = {
 		Buttons = {},

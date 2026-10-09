@@ -16,8 +16,9 @@ local NotificationModule = require(Components.Notification)
 local New = Creator.New
 
 local ProtectGui = protectgui or (syn and syn.protect_gui) or function() end
+local ParentGui = (gethui and gethui()) or (RunService:IsStudio() and LocalPlayer.PlayerGui) or game:GetService("CoreGui")
 local GUI = New("ScreenGui", {
-	Parent = RunService:IsStudio() and LocalPlayer.PlayerGui or game:GetService("CoreGui"),
+	Parent = ParentGui,
 })
 ProtectGui(GUI)
 NotificationModule:Init(GUI)
@@ -89,11 +90,12 @@ function Library:SafeCallback(Function, ...)
 end
 
 function Library:Round(Number, Factor)
-	if Factor == 0 then
-		return math.floor(Number)
+	Number = tonumber(Number) or 0
+	if not Factor or Factor == 0 then
+		return math.round(Number)
 	end
-	Number = tostring(Number)
-	return Number:find("%.") and tonumber(Number:sub(1, Number:find("%.") + Factor)) or Number
+	local Mult = 10 ^ Factor
+	return math.round(Number * Mult) / Mult
 end
 
 local Icons = require(Root.Icons).assets
@@ -119,11 +121,20 @@ end
     			ElementComponent.ScrollFrame = self.ScrollFrame
     			ElementComponent.Library = Library
     			ElementComponent.TabIndex = self.TabIndex
-    			local result = ElementComponent:New(Idx, Config)
+
+    			-- Normalize Idx and Config: if Idx is a table and Config is nil, Idx is actually Config
+    			local actualIdx = Idx
+    			local actualConfig = Config
+    			if type(Idx) == "table" and Config == nil then
+    				actualConfig = Idx
+    				actualIdx = actualConfig.Flag or actualConfig.Title or ""
+    			end
+
+    			local result = ElementComponent:New(actualIdx, actualConfig)
 
     			-- Attach favorite pin button
-    			if result and result.Frame and type(Idx) == "string" and Idx ~= "" then
-    				Library:_attachPinButton(result, Idx)
+    			if result and result.Frame and type(actualIdx) == "string" and actualIdx ~= "" then
+    				Library:_attachPinButton(result, actualIdx)
     			end
 
     			return result
@@ -239,11 +250,24 @@ end
 function Library:Destroy()
 	if Library.Window then
 		Library.Unloaded = true
-		if Library.UseAcrylic then
-			Library.Window.AcrylicPaint.Model:Destroy()
+		for _, frame in ipairs(Library.OpenFrames) do
+			pcall(function() frame:Destroy() end)
 		end
+		Library.OpenFrames = {}
+
+		if Library.UseAcrylic and Library.Window.AcrylicPaint and Library.Window.AcrylicPaint.Model then
+			pcall(function() Library.Window.AcrylicPaint.Model:Destroy() end)
+		end
+
+		pcall(function()
+			Library.Window:Destroy()
+		end)
+		Library.Window = nil
+
 		Creator.Disconnect()
-		Library.GUI:Destroy()
+		pcall(function()
+			Library.GUI:Destroy()
+		end)
 	end
 end
 

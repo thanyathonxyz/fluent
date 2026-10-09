@@ -26,7 +26,7 @@ local SaveManager = {} do
 		},
 		Dropdown = {
 			Save = function(idx, object)
-				return { type = "Dropdown", idx = idx, value = object.Value, mutli = object.Multi }
+				return { type = "Dropdown", idx = idx, value = object.Value, multi = object.Multi }
 			end,
 			Load = function(idx, data)
 				if SaveManager.Options[idx] then 
@@ -62,6 +62,28 @@ local SaveManager = {} do
 			Load = function(idx, data)
 				if SaveManager.Options[idx] and type(data.text) == "string" then
 					SaveManager.Options[idx]:SetValue(data.text)
+				end
+			end,
+		},
+
+		Stepper = {
+			Save = function(idx, object)
+				return { type = "Stepper", idx = idx, value = object.Value }
+			end,
+			Load = function(idx, data)
+				if SaveManager.Options[idx] then
+					SaveManager.Options[idx]:SetValue(tonumber(data.value) or data.value)
+				end
+			end,
+		},
+
+		SelectionList = {
+			Save = function(idx, object)
+				return { type = "SelectionList", idx = idx, value = object.Selected }
+			end,
+			Load = function(idx, data)
+				if SaveManager.Options[idx] then
+					SaveManager.Options[idx]:SetValue(data.value)
 				end
 			end,
 		},
@@ -126,6 +148,57 @@ local SaveManager = {} do
 		for _, option in next, decoded.objects do
 			if self.Parser[option.type] then
 				task.spawn(function() self.Parser[option.type].Load(option.idx, option) end) -- task.spawn() so the config loading wont get stuck.
+			end
+		end
+
+		return true
+	end
+
+	function SaveManager:ExportToClipboard()
+		local data = {
+			objects = {}
+		}
+
+		for idx, option in next, SaveManager.Options do
+			if not self.Parser[option.Type] then continue end
+			if self.Ignore[idx] then continue end
+
+			table.insert(data.objects, self.Parser[option.Type].Save(idx, option))
+		end
+
+		local success, encoded = pcall(httpService.JSONEncode, httpService, data)
+		if not success then
+			return false, "failed to encode data"
+		end
+
+		local setClip = setclipboard or toclipboard or set_clipboard or (Clipboard and Clipboard.set)
+		if setClip then
+			setClip(encoded)
+			return true
+		else
+			return false, "clipboard is not supported on this executor"
+		end
+	end
+
+	function SaveManager:ImportFromClipboard()
+		local getClip = getclipboard or get_clipboard or (Clipboard and Clipboard.get)
+		if not getClip then
+			return false, "clipboard reading is not supported on this executor"
+		end
+
+		local content = getClip()
+		if not content or content == "" then
+			return false, "clipboard is empty"
+		end
+
+		local success, decoded = pcall(httpService.JSONDecode, httpService, content)
+		if not success or type(decoded) ~= "table" or not decoded.objects then
+			return false, "invalid clipboard data format"
+		end
+
+		for _, option in next, decoded.objects do
+			if self.Parser[option.type] then
+				task.spawn(function() self.Parser[option.type].Load(option.idx, option) end)
 			end
 		end
 
@@ -323,6 +396,52 @@ local SaveManager = {} do
 				AutoloadButton:SetDesc("Current autoload config: " .. name)
 			end
 		end
+
+		section:AddButton({
+			Title = "Export to clipboard",
+			Description = "Copy current config to clipboard to share",
+			Callback = function()
+				local success, err = self:ExportToClipboard()
+				if success then
+					self.Library:Notify({
+						Title = "Interface",
+						Content = "Config loader",
+						SubContent = "Config copied to clipboard!",
+						Duration = 5
+					})
+				else
+					self.Library:Notify({
+						Title = "Interface",
+						Content = "Config loader",
+						SubContent = "Failed to copy: " .. tostring(err),
+						Duration = 7
+					})
+				end
+			end
+		})
+
+		section:AddButton({
+			Title = "Import from clipboard",
+			Description = "Load config pasted in clipboard",
+			Callback = function()
+				local success, err = self:ImportFromClipboard()
+				if success then
+					self.Library:Notify({
+						Title = "Interface",
+						Content = "Config loader",
+						SubContent = "Loaded config from clipboard!",
+						Duration = 5
+					})
+				else
+					self.Library:Notify({
+						Title = "Interface",
+						Content = "Config loader",
+						SubContent = "Failed to import: " .. tostring(err),
+						Duration = 7
+					})
+				end
+			end
+		})
 
 		SaveManager:SetIgnoreIndexes({ "SaveManager_ConfigList", "SaveManager_ConfigName" })
 	end

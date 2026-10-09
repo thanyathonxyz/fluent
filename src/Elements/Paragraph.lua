@@ -7,7 +7,12 @@ local Paragraph = {}
 Paragraph.__index = Paragraph
 Paragraph.__type = "Paragraph"
 
-function Paragraph:New(Config)
+function Paragraph:New(Idx, Config)
+	if type(Idx) == "table" and Config == nil then
+		Config = Idx
+		Idx = nil
+	end
+	Config = Config or {}
 	assert(Config.Title, "Paragraph - Missing Title")
 	Config.Content = Config.Content or Config.Desc or ""
 
